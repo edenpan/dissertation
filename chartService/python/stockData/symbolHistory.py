@@ -61,6 +61,7 @@ def getResolution(x):
 		'30':{'p':'30minutes'},
 		'60':{'p':'hour'},
 		'D':{'p':'day'},
+		'1D':{'p':'day'},
 	}.get(x)
 
 # history = SymbolHistory('700', '946684800', '1529971200','1D')

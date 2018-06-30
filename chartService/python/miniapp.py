@@ -8,7 +8,6 @@ from stockData.symbolListInfo import SymbolListInfo
 from stockData.symbolHistory import SymbolHistory
 app = Flask(__name__)
 
-
 @app.route('/')
 def hello_test():
     return 'hello, test'
@@ -27,12 +26,15 @@ def get_config():
 @app.route('/search')
 def get_searchList():
     symbolList = SymbolListInfo()
-    return setJsonRes(symbolList.getSymbollist())
+    return setJsonRes(symbolList.getSymbollistStr())
 
 @app.route('/symbols')
 def get_symbols():
     symbol = request.args.get('symbol')
-    symInfo = SymbolHSIInfo(symbol+'.hk')
+    symbolList = SymbolListInfo().getSymbollist()
+    for symbolInfo  in symbolList:
+        if(symbolInfo.get("symbol") == symbol):
+            symInfo = SymbolHSIInfo(symbol, symbolInfo.get("full_name"), symbolInfo.get("description"))
     return setJsonRes(json.dumps(symInfo.__dict__))
 
 @app.route('/history')    
