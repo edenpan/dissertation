@@ -16,7 +16,7 @@ export interface UdfCompatibleConfiguration extends IDatafeed.DatafeedConfigurat
 
 
 const hg: Hesonogoma = new Hesonogoma();
-const supported_resolutions = ['1', '5', '15', '30', '60', '1D', '1W', '1M'];
+const supported_resolutions = ['1', '5', '15', '30', '60', '4h', '1D'];
 // tslint:disable-next-line:max-line-length
 const HSIList = [['0939', 'China Construction Bank', 'China Construction Bank', '0939'],
 ['0005', 'HSBC Holdings plc', 'HSBC Holdings plc', '0005'],
@@ -87,85 +87,7 @@ export class DatafeedService {
     return Math.floor(Date.now()) + '';
   }
 
-  async gettest(symbolName: string, from: number, to: number, resolution: string) {
-    // return await getData.Finance.get();
-    // return md5('message');
-    let time = 'kline_1m'
-    switch (resolution) {
-      case '5':
-      time = 'kline_5m'
-        break;
-      case '15':
-      time = 'kline_15m'
-        break;
-      case '30':
-      time = 'kline_30m'
-        break;
-      case '60':
-      time = 'kline_1h'
-        break;
-      case '1D':
-      time = 'kline_1d'
-        break;
-      case '1W':
-      time = 'kline_1w'
-        break;
-    }
-    const res = await getData.Finance.currencyList();
-    let currencyiID ;
-    res.currency_list.USDT.forEach((obj) => {
-      if ( obj.currency_mark === symbolName.toUpperCase()) {
-          currencyiID = obj.currency_id
-      }
-    })
-    const opt = {
-      currency_mark: symbolName,
-      currency: currencyiID,
-      basemark: '104',
-      time: time,
-      ts: Math.floor(Date.now() / 1000)
-    };
-    return await getData.Finance.getHistory(opt);
-  }
-
-  // async resolveSymbol(symbolName: string) {
-    // const reslist = await getData.Finance.currencyList();
-  //   const res = reslist.currency_list.USDT
-  //   if (!res || res.length === 0) {
-  //     return;
-  //   }
-  //   const symbolInfo = res.find(o => {
-  //     return o.currency_mark === symbolName;
-  //   });
-  //   if (!symbolInfo) {
-  //     return;
-  //   }
-  //   return {
-  //     name: symbolInfo.currency_mark,
-  //     full_name: symbolInfo.currency_name,
-  //     ticker: symbolInfo.currency_mark,
-  //     description: symbolInfo.currency_mark + ' - ' + symbolInfo.currency_name,
-  //     type: '交易所',
-  //     session: '24*7',
-  //     exchange: 'digifinex交易所',
-  //     listed_exchange: 'digifinex交易所',
-  //     timezone: 'Asia/Shanghai',
-  //     pricescale: 8,
-  //     minmov: 1,
-  //     has_intraday: true,
-  //     supported_resolutions,
-  //     has_daily: true,
-  //     has_weekly_and_monthly: true,
-  //     has_no_volume: false,
-  //     sector: symbolInfo.currency_name,
-  //     industry: '交易所',
-  //     currency_code: 'USDT',
-  //   };
-  // }
-
-   // rewrite
   async resolveSymbol(symbolName: string) {
-    // const res = <string[][]> await hg.getFindDataInfo(hg.Data.FirstSection);
     const res = HSIList;
     if (!res || res.length === 0) {
       return;
@@ -190,9 +112,6 @@ export class DatafeedService {
       pricescale: 100,
       minmov: 1,
       has_intraday: true,
-      /**
-       * An array of resolutions which should be enabled in resolutions picker for this symbol.
-       */
       supported_resolutions,
       has_daily: true,
       has_weekly_and_monthly: true,
@@ -204,101 +123,35 @@ export class DatafeedService {
   }
 
   async getHistory(symbolName: string, from: number, to: number, resolution: string) {
-    // let time = 'kline_1m'
-    // switch (resolution) {
-    //   case '5':
-    //   time = 'kline_5m'
-    //     break;
-    //   case '15':
-    //   time = 'kline_15m'
-    //     break;
-    //   case '30':
-    //   time = 'kline_30m'
-    //     break;
-    //   case '60':
-    //   time = 'kline_1h'
-    //     break;
-    //   case '1D':
-    //   time = 'kline_1d'
-    //     break;
-    //   case '1W':
-    //   time = 'kline_1w'
-    //     break;
-    // }
-    // const res = await getData.Finance.currencyList();
-    // let currencyiID ;
-    // res.currency_list.USDT.forEach((obj) => {
-    //   if ( obj.currency_mark === symbolName.toUpperCase()) {
-    //       currencyiID = obj.currency_id
-    //   }
-    // })
-    // const opt = {
-    //   currency_mark: symbolName,
-    //   currency: currencyiID,
-    //   basemark: '104',
-    //   time: time,
-    //   ts: Math.floor(Date.now() / 1000)
-    // };
-    // const HisData = await getData.Finance.getHistory(opt);
-
-    // const t: number[] = [], c: number[] = [], o: number[] = [], l: number[] = [], h: number[] = [], v: number[] = [];
-    // HisData[time].forEach((obj) => {
-    //   t.push(obj[0]);
-    //   if (obj[5]) {
-    //     c.push(obj[5]);
-    //   }
-    //   if (obj[2]) {
-    //     o.push(obj[2]);
-    //   }
-    //   if (obj[4]) {
-    //     l.push(obj[4]);
-    //   }
-    //   if (obj[3]) {
-    //     h.push(obj[3]);
-    //   }
-    //   if (obj[1]) {
-    //     v.push(obj[1]);
-    //   }
-    // })
-
-    // if (HisData.length === 0) {
-    //   return {
-    //     s: 'no_data'
-    //   }
-    // }
-    // return { s: 'ok', t, c, o, l, h, v};
-    // rewrite
-    let i = 60, p = '1M';
+    let time = 'day'
     switch (resolution) {
-      case '5':
-        i = 5 * 60
+      case '1':
+        time = '1minutes'
         break;
       case '5':
-        i = 5 * 60
+        time = '5minutes'
         break;
       case '15':
-        i = 15 * 60
+        time = '15minutes'
         break;
       case '30':
-        i = 30 * 60
+        time = '30minutes'
+        break;
+      case '60':
+        time = 'hour'
+        break;
+      case '4h':
+        time = '4hours'
         break;
       case '1D':
-        i = 24 * 60 * 60
-        p = '3M'
-        break;
-      case '1W':
-        i = 7 * 24 * 60 * 60
-        p = '1y'
-        break;
-      case '1M':
-        p = '5y'
-        i = 4 * 7 * 24 * 60 * 60
+        time = 'day'
         break;
     }
     const opt = {
       q: symbolName,
-      x: 'HKG',
-      p, i
+      starttime: from,
+      endtime: to,
+      resolution: time
     };
     const hisRes = await GoogleFinance.getHistory(opt);
     const t: number[] = [], c: number[] = [], o: number[] = [], l: number[] = [], h: number[] = [], v: number[] = [];

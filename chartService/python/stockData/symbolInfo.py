@@ -4,7 +4,6 @@ import sys
 # from yahoo_finance_HSI import get_price,get_index
 
 class SymbolHSIInfo():
-
 	def __init__(self, name):
 		self.name = name
 		self.full_name = name
@@ -18,7 +17,7 @@ class SymbolHSIInfo():
 		self.pricescale = 2
 		self.minmov = 1
 		self.has_intraday = False
-		self.supported_resolutions = ['1', '5', '15', '30', '60', '1D', '1W', '1M']
+		self.supported_resolutions = ['1', '5', '15', '30', '60', '1D']
 		self.has_daily = True
 		self.has_weekly_and_monthly = True
 		self.has_no_volume = False
