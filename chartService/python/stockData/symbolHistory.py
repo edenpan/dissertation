@@ -11,7 +11,8 @@ class SymbolHistory():
 		self.fromDate = fromDate
 		self.toDate = toDate
 		self.resolution = getResolution(resolution).get('p')
-		self.url = 'http://127.0.0.1:8888/history/%s?resolution=%s&starttime=%s&endtime=%s'%(self.symbolName, self.resolution, self.fromDate, self.toDate)
+		# self.url = 'http://127.0.0.1:8888/history/%s?resolution=%s&starttime=%s&endtime=%s'%(self.symbolName, self.resolution, self.fromDate, self.toDate)
+		self.url = 'http://18.182.12.142:8888/history/%s?resolution=%s&starttime=%s&endtime=%s'%(self.symbolName, self.resolution, self.fromDate, self.toDate)
 	
 	def getHistory(self):
 		response = requests.get(self.url)
