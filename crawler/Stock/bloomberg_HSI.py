@@ -20,9 +20,8 @@ def get_price(code):
     user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36'
    
     #user = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
-
-    response = requests.get(url)
-    print response.text
+    response = requests.get(url,headers={"User-Agent":user_agent, "Accept":accept, "accept-encoding":acceptEncoding})
+    sleep(3)
     parser = html.fromstring(response.text)
 
     summary_data = OrderedDict()
@@ -86,10 +85,10 @@ if __name__=="__main__":
         HSI_price_data = pd.concat([HSI_price_data, price_data], sort=True)
 
     u_time = str(datetime.now())[0:10]
-    if not os.path.exists('data/bloomberg/'):
-        os.makedirs('data/bloomberg/')
+    if not os.path.exists('../data/bloomberg/'):
+        os.makedirs('../data/bloomberg/')
 
-    file_name = 'data/bloomberg' + '/HSI_bloomberg_' + u_time
+    file_name = '../data/bloomberg' + '/HSI_bloomberg_' + u_time
     HSI_price_data.to_csv(file_name + '.csv', sep=',', na_rep='N/A', columns=cols, index=False)
 
 

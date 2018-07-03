@@ -65,10 +65,10 @@ if __name__=="__main__":
         HSI_price_data = pd.concat([HSI_price_data, price_data], sort=True)
 
     u_time = str(datetime.now())[0:10]
-    if not os.path.exists('data/yahoo/'):
-        os.makedirs('data/yahoo/')
+    if not os.path.exists('../data/yahoo/'):
+        os.makedirs('../data/yahoo/')
 
-    file_name = 'data/yahoo' + '/HSI_yahoo_' + u_time
+    file_name = '../data/yahoo' + '/HSI_yahoo_' + u_time
     HSI_price_data.to_csv(file_name + '.csv', sep=',', na_rep='N/A', columns=cols, index=False)
 
 
