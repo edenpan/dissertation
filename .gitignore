@@ -41,7 +41,7 @@ Thumbs.db
 
 # IntelliJ
 out/
-*.txt
+
 *.iml
 # ignore the crawl data
 crawler/data
