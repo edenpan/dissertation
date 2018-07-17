@@ -4,6 +4,15 @@ import requests
 import json
 from dateutil import parser
 import time
+import pandas as pd
+import psycopg2
+import psycopg2.extras
+import pandas as pd
+from sqlalchemy import create_engine
+import calendar
+symbolList = []
+conn = psycopg2.connect("dbname='stockdb' user='runner' password='tester'")
+engine = create_engine('postgresql://runner:tester@localhost/stockdb', echo=False) 
 
 class SymbolHistory():
 	def __init__(self, symbolName, fromDate, toDate, resolution):
@@ -15,17 +24,34 @@ class SymbolHistory():
 		self.url = 'http://18.182.12.142:8888/history/%s?resolution=%s&starttime=%s&endtime=%s'%(self.symbolName, self.resolution, self.fromDate, self.toDate)
 	
 	def getHistory(self):
-		response = requests.get(self.url)
-		print self.url
-		history = response.text
-		historyList = json.loads(history)
+		result = {}
 		t =[]
 		c = []
 		o = []
 		l = []
 		h = []
 		v = []
-		result = {}
+		#to get the mac indicator
+		if(self.symbolName.startswith("Indic#")):
+			code = self.symbolName.split('#')[1]
+			technical = self.symbolName.split('#')[2]
+			techData = []
+			if( technical == 'MAC5'):
+				# inttime = int(time.mktime(parser.parse(tick.get('date')).timetuple()))
+				# t.append(inttime)
+				macData = mac(code)
+				result["s"] = "ok"
+				result["c"] = macData.get('m')
+				result["t"] = macData.get('t')
+
+			return result
+		
+		response = requests.get(self.url)
+		print self.url
+		history = response.text
+		historyList = json.loads(history)
+		
+		
 		if(0 == len(historyList)):
 			result["s"] = "no_data"
 		else :			
@@ -38,7 +64,6 @@ class SymbolHistory():
 				# print time.mktime(parser.parse(tick.get('date')))
 				inttime = int(time.mktime(parser.parse(tick.get('date')).timetuple()))
 				t.append(inttime)
-			
 			result["s"] = "ok"
 			result["t"] = t
 			result["v"] = v
@@ -47,10 +72,6 @@ class SymbolHistory():
 			result["h"] = h
 			result["o"] = o
 		return result
-
-
-
-
 
 # get the resolution period.
 # day / hour / 30minutes / 15minutes / 5minutes / minute
@@ -64,6 +85,48 @@ def getResolution(x):
 		'D':{'p':'day'},
 		'1D':{'p':'day'},
 	}.get(x)
+
+#get the HSI symbol code from the postgreSQL.
+def getSymbolList():
+	global symbolList
+	if len(symbolList) == 0:
+		print "request symbolist " +  str(len(symbolList))
+		conn = psycopg2.connect("dbname=stockdb user=runner")
+		cur = conn.cursor()
+		cur.execute("SELECT Symbol,tablename FROM config")
+		symbolList = cur.fetchall()		
+	print "2 symbolist " +   str(len(symbolList))
+	return symbolList
+
+def getDaliyData(tableName):
+	global engine
+	data = pd.read_sql_query('select datetime,open::money::numeric,close::money::numeric,high::money::numeric,low::money::numeric, adjclose::money::numeric, volume from %s'%tableName,con=engine)
+	return data	
+
+
+#the intraday mac strategy.
+def mac(code):
+	print code
+	code = code.lstrip("0")
+	print code
+	#get the stock data 
+	symbolList = getSymbolList()
+	stockData = pd.DataFrame()
+	for symbol in symbolList:
+		if(code == symbol[0]):
+			tableName = symbol[1]
+			print tableName
+			stockData = getDaliyData(tableName)
+			print stockData.head()
+	stockData['mac5'] = stockData['adjclose'].rolling(5).mean().fillna(method='backfill')
+	date1 = stockData['datetime'].values
+	t = [] 
+	for a in date1:
+		t.append(calendar.timegm(a.timetuple()))
+	m = stockData['mac5'].tolist()
+	result = {'m' : m, 't': t}
+	return result
+
 
 # history = SymbolHistory('700', '946684800', '1529971200','1D')
 # history.getHistory()
