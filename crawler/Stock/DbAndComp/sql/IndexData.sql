@@ -797,9 +797,3 @@ create TABLE Sunny_Optical (
     Fifty_two_wk_high        money,
     Fifty_two_wk_low        money
 );
-
-create TABLE config (
-    Symbol        varchar(8) PRIMARY KEY,
-    TableName        varchar(30),
-    stockName        varchar(30)
-);

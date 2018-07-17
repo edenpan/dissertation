@@ -49,13 +49,14 @@ def get_price(code):
     return summary_data
 
 if __name__=="__main__":
+    
     import sys
     sys.path.append('/Users/shiqipan/code/dissertation/')
     from crawler.Util import sqlUtil 
     # sys.path.insert(0,  
     index = sqlUtil.getSymbolList()
     print index
-    
+
     HSI_price_data = pd.DataFrame()
     f_data = get_price(str(index[0][0]) + '.HK')
     cols = f_data.keys()

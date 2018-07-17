@@ -1,4 +1,5 @@
 # coding: utf-8
+# coding: utf-8
 # author: chenfei
 # usage: python yahoo_finance_market.py 0700
 from lxml import html  
@@ -51,7 +52,8 @@ def get_price(code):
 
 if __name__=="__main__":
     
-    index = common.get_index()
+    index = sqlUtil.getSymbolList()
+    print
     
     HSI_price_data = pd.DataFrame()
     f_data = get_price(index[0] + '.HK')

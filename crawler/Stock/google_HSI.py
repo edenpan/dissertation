@@ -12,8 +12,7 @@ from datetime import datetime
 import os
 
 import sys
-sys.path.insert(0,  '../util')
-import common
+
 
 def get_price(code):
    
@@ -48,27 +47,33 @@ def get_price(code):
     summary_data.update({headers[8] : str(price[17]).strip()})
     return summary_data
 
-if __name__=="__main__":
-    
-    index = commom.get_index()
-    HSI_price_data = pd.DataFrame()
-    f_data = get_price(index[0])
-    cols = f_data.keys()
 
-    for code in index:
-    	# if code == '6098':
-        #    continue
-        summary_data = get_price(code)
-        print summary_data
-        price_data = pd.DataFrame.from_dict(summary_data, orient='index').T       
-        HSI_price_data = pd.concat([HSI_price_data, price_data], sort=True)   
-    
-    u_time = str(datetime.now())[0:10]
-    if not os.path.exists('../data/google/'):
-        os.makedirs('../data/google/')
 
-    file_name = '../data/google' + '/HSI_google_' + u_time
-    HSI_price_data.to_csv(file_name + '.csv', sep=',', na_rep='N/A', columns=cols, index=False)
+import sys
+sys.path.append('/Users/shiqipan/code/dissertation/')
+from crawler.Util import common 
+index = common.get_index()
+HSI_price_data = pd.DataFrame()
+print index[0]
+f_data = get_price(index[0])
+print f_data
+cols = f_data.keys()
+
+for code in index:
+    summary_data = get_price(code)
+    print summary_data
+    price_data = pd.DataFrame.from_dict(summary_data, orient='index').T       
+    HSI_price_data = pd.concat([HSI_price_data, price_data], sort=True)   
+
+u_time = str(datetime.now())[0:10]
+if not os.path.exists('../data/google/'):
+    os.makedirs('../data/google/')
+
+file_name = '../data/google' + '/HSI_google_' + u_time
+from sqlalchemy import create_engine
+engine = create_engine('postgresql://scott:tiger@localhost:5432/mydatabase')
+df.to_sql('table_name', engine)
+HSI_price_data.to_csv(file_name + '.csv', sep=',', na_rep='N/A', columns=cols, index=False)
 
 
 
