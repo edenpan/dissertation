@@ -43,7 +43,14 @@ class SymbolHistory():
 				result["s"] = "ok"
 				result["c"] = macData.get('m')
 				result["t"] = macData.get('t')
-
+			if( technical == 'BollingerBands'):
+				bollingerData = bollinger(code)
+				result["s"] = "ok"
+				result["o"] = bollingerData.get('sma')
+				result["c"] = bollingerData.get('c')
+				result["l"] = bollingerData.get('bl')
+				result["h"] = bollingerData.get('bh')
+				result["t"] = bollingerData.get('t')	
 			return result
 		
 		response = requests.get(self.url)
@@ -106,18 +113,7 @@ def getDaliyData(tableName):
 
 #the intraday mac strategy.
 def mac(code):
-	print code
-	code = code.lstrip("0")
-	print code
-	#get the stock data 
-	symbolList = getSymbolList()
-	stockData = pd.DataFrame()
-	for symbol in symbolList:
-		if(code == symbol[0]):
-			tableName = symbol[1]
-			print tableName
-			stockData = getDaliyData(tableName)
-			print stockData.head()
+	stockData = getStockData(code)
 	stockData['mac5'] = stockData['adjclose'].rolling(5).mean().fillna(method='backfill')
 	date1 = stockData['datetime'].values
 	t = [] 
@@ -127,6 +123,33 @@ def mac(code):
 	result = {'m' : m, 't': t}
 	return result
 
+def bollinger(code,window = 20, numStd = 2):
+	stockData = getStockData(code)
+	rollingMean =  stockData['adjclose'].rolling(window).mean().fillna(method='backfill')		
+	rollingStd = stockData['adjclose'].rolling(window).std().fillna(method='backfill')			
+	stockData['sma'] = rollingMean
+	stockData['BollingerHigh'] = rollingMean + (rollingStd * numStd)
+	stockData['BollingerLow'] = rollingMean - (rollingStd * numStd)
+
+	date1 = stockData['datetime'].values
+	t = [] 
+	for a in date1:
+		t.append(calendar.timegm(a.timetuple()))
+	bh = stockData['BollingerHigh'].tolist()
+	bl = stockData['BollingerLow'].tolist()
+	result = {'bh' : bh, 'bl': bl, 't': t, 'sma': stockData['sma'].tolist(), 'c': stockData['adjclose'].tolist()}
+	return result
+
+def getStockData(code):
+	code = code.lstrip("0")
+	symbolList = getSymbolList()
+	stockData = pd.DataFrame()
+	for symbol in symbolList:
+		if(code == symbol[0]):
+			tableName = symbol[1]
+			print tableName
+			stockData = getDaliyData(tableName)
+			return stockData
 
 # history = SymbolHistory('700', '946684800', '1529971200','1D')
 # history.getHistory()
