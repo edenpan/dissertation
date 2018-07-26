@@ -146,3 +146,12 @@ CREATE TABLE bloombergStock(
     Dividend        double precision,
     Last_Dividend_Reported        double precision
 );
+
+CREATE TABLE config(
+    symbol        varchar(8),
+    tablename        varchar(20),
+    stockname        varchar(30),
+    isupdate        boolean,
+    datetime        date
+);
+

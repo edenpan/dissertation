@@ -20,8 +20,8 @@ class SymbolHistory():
 		self.fromDate = fromDate
 		self.toDate = toDate
 		self.resolution = getResolution(resolution).get('p')
-		# self.url = 'http://127.0.0.1:8888/history/%s?resolution=%s&starttime=%s&endtime=%s'%(self.symbolName, self.resolution, self.fromDate, self.toDate)
-		self.url = 'http://18.182.12.142:8888/history/%s?resolution=%s&starttime=%s&endtime=%s'%(self.symbolName, self.resolution, self.fromDate, self.toDate)
+		self.url = 'http://127.0.0.1:8888/history/%s?resolution=%s&starttime=%s&endtime=%s'%(self.symbolName, self.resolution, self.fromDate, self.toDate)
+		# self.url = 'http://18.182.12.142:8888/history/%s?resolution=%s&starttime=%s&endtime=%s'%(self.symbolName, self.resolution, self.fromDate, self.toDate)
 	
 	def getHistory(self):
 		result = {}
@@ -41,15 +41,16 @@ class SymbolHistory():
 				# t.append(inttime)
 				macData = mac(code)
 				result["s"] = "ok"
-				result["c"] = macData.get('m')
+				result["type"] = "IndicatorTick"
+				result["i1"] = macData.get('m')
 				result["t"] = macData.get('t')
 			if( technical == 'BollingerBands'):
 				bollingerData = bollinger(code)
 				result["s"] = "ok"
-				result["o"] = bollingerData.get('sma')
-				result["c"] = bollingerData.get('c')
-				result["l"] = bollingerData.get('bl')
-				result["h"] = bollingerData.get('bh')
+				result["type"] = "IndicatorTick"
+				result["i2"] = bollingerData.get('sma')
+				result["i1"] = bollingerData.get('bl')
+				result["i3"] = bollingerData.get('bh')
 				result["t"] = bollingerData.get('t')	
 			return result
 		
@@ -72,6 +73,7 @@ class SymbolHistory():
 				inttime = int(time.mktime(parser.parse(tick.get('date')).timetuple()))
 				t.append(inttime)
 			result["s"] = "ok"
+			result["type"] = "FullTick"
 			result["t"] = t
 			result["v"] = v
 			result["c"] = c
@@ -137,7 +139,7 @@ def bollinger(code,window = 20, numStd = 2):
 		t.append(calendar.timegm(a.timetuple()))
 	bh = stockData['BollingerHigh'].tolist()
 	bl = stockData['BollingerLow'].tolist()
-	result = {'bh' : bh, 'bl': bl, 't': t, 'sma': stockData['sma'].tolist(), 'c': stockData['adjclose'].tolist()}
+	result = {'bh' : bh, 'bl': bl, 't': t, 'sma': stockData['sma'].tolist()}
 	return result
 
 def getStockData(code):

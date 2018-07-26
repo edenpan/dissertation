@@ -24,7 +24,7 @@ def mac(code, days):
 	for a in date1:
 		t.append(calendar.timegm(a.timetuple()))
 	print t
-	m = stockData['mac5'].tolist()
+	m = stockData['mac' + str(days)].tolist()
 	result = {'m' : m, 't': t}
 	print result
 	return result
