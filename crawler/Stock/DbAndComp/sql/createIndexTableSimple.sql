@@ -448,3 +448,11 @@ create TABLE Sunny_Optical (
     AdjClose        money,
     Volume        double precision
 );
+
+CREATE TABLE config(
+    symbol        varchar(8),
+    tablename        varchar(20),
+    stockname        varchar(30),
+    isupdate        boolean,
+    datetime        date
+);

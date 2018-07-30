@@ -48,6 +48,7 @@ def get_history():
     resolution = request.args.get('resolution')
     print symbol,dateFrom,dateTo,resolution
     history = SymbolHistory(symbol, dateFrom, dateTo, resolution)
+    print setJsonRes(json.dumps(history.getHistory()))
     return setJsonRes(json.dumps(history.getHistory()))
 
 def setJsonRes(jsonCont):

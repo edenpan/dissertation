@@ -146,6 +146,7 @@ def testDB():
 		sqlUtil.insertPd(tableName, history)
 		sleep(1)
 
+#insert history data into postgreSql
 def test():
 	import sys
 	sys.path.append('/Users/shiqipan/code/dissertation/')
@@ -157,7 +158,7 @@ def test():
 		symbolCode = str(table[0]).zfill(4) + '.HK'
 		tableName = table[1]
 		print('===', tableName, '===')
-		history = load_yahoo_quote(symbolCode, '20130701', '20180712', format_output = 'dataframe')
+		history = load_yahoo_quote(symbolCode, '20070701', '20180729', format_output = 'dataframe')
 		sqlUtil.insertPd(tableName, history)
 		sleep(1)
 
