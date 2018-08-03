@@ -1,3 +1,4 @@
+# coding: utf-8
 from numpy import *
 import random
 from math import sin, sqrt
