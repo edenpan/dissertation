@@ -1,7 +1,11 @@
 # coding: utf-8
 # autor:Eden
-# date:2018-07-31
-# ma.py : implement Moving Average(MA) that describe in the 'Complex stock trading strategy based on parallel particle swarm optimization'
+# date:2018-08-03
+# macd.py : combination of two exponential moving average (EMA) of close price,
+#			weighs current prices more heavily than past prices in the average calculation
+#			α : 2/(1+n)
+#			E.Avgt,n = α × pt + (1 − α) × E.Avgt−1,n
+#			E.Avgt−1,n is the n day EMA of former day t − 1
 # parameters: nl: long-period moving average lenth :[15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200, 250]
 #			  ns: short-period moving average lenth :[1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200 ]
 # singal: buy signal : short-period moving average above  long-period moving average
@@ -26,15 +30,15 @@ def score(row):
 
 
 
-def ma(code, nl=[15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200, 250], ns= [1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200]):
+def macd(code, nl=[15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200, 250], ns= [1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200]):
 	stockData = utils.getStockData(code)
 	cnt = 0
 	scoreRes = pd.DataFrame()
 	for l in nl:
 		for s in ns:
 			if l > s:
-				smal = pd.Series(stockData['adjclose'].rolling(l).mean().values, index = stockData['datetime'])
-				smas = pd.Series(stockData['adjclose'].rolling(s).mean().values, index = stockData['datetime'])
+				smal = pd.Series(stockData['adjclose'].ewm(span = l).mean().values, index = stockData['datetime'])
+				smas = pd.Series(stockData['adjclose'].ewm(span = s).mean().values, index = stockData['datetime'])
 				cnt = cnt + 1
 				# print smal, smas
 				buy =  smas > smal
@@ -47,4 +51,4 @@ def ma(code, nl=[15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200, 250], ns= 
 	print "total Strategy: " + str(cnt)			
 
 if __name__=="__main__":
-	ma("5" )
+	macd("5" )
