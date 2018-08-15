@@ -6,7 +6,10 @@
 # return: roi(roi = (capNow-oriCap)/oriCap)
 #The problem is how to set this as an interface that the pso or other's only need to call this function, rather then
 # to call the real implement strategy?
-import bb
+from  bb import BollingerBands
+from  bb import defaultParam as bbDefualtParams
+from  bb import parseparams as bbparseparams
+from  ma import ma
 import sys
 sys.path.append('../')
 import utils
@@ -16,16 +19,21 @@ import pandas as pd
 def filtZero(df, key, value):
 	return df[df[key] != value]
 
-def runbackTest(code, oriCap = 10000.00):
-	stockData = utils.getStockData(code)
-	result, n = bb.BollingerBands(stockData)
-	strategyResList 
+def runbackTest(code, strategyName, isTrain, oriCap = 10000.00, **kwargs):
+	pd.DataFrame.mask = filtZero
+	stockData = utils.getStockDataTrain(code, isTrain)
+
+	result, n = globals()[strategyName](stockData, **kwargs)
+	bestRoi = -99999.99
+	bestParam = ''
+	strategyResList = []
 	i = 0
 	while i < n:
 		cap = oriCap
 		execList = []
 		state = False
 		stockNum = 0.0
+		bestParam = result.columns[i]
 		effectRows = result.mask(result.columns[i], 0.0)
 		for date, signal in effectRows[result.columns[i]].iteritems():
 			#if the singal is buy(>0) and the state is False that no hold any stock,will excute buy
@@ -37,26 +45,32 @@ def runbackTest(code, oriCap = 10000.00):
 			#if the singal is Sell(<0) and the state is True that held stocks,will excute sell				
 			if signal < 0 and state:
 				cap = stockData.loc[stockData["datetime"] == date]["adjclose"].values[0]* stockNum
-				print cap
 				stockNum = 0.0
 				state = False
 				execList.append((date,"sell",cap))
-		if len(execList) > 0:
-			# At the end, execute the sell if held any stock so that can calculate the roi		
-			if state:
-				cap = stockData.iloc[-1].adjclose.values[0] * stockNum
-			print "cap" + str(cap)
-			roi = (cap-oriCap)/oriCap
-			print str(result.columns[i]) +" roi is : " + str(roi)
-			print "execute list " + str(execList)
+			
+		if state:
+			cap = stockData.iloc[-1].adjclose * stockNum
+		roi = (cap-oriCap)/oriCap
+		if bestRoi < roi:
+			bestRoi = roi
+			bestParam = result.columns[i]
+		strategyResList.append({"BollingerBands_" + str(result.columns[i]) : (roi, execList)})
 		
 		i = i + 1
-	# for row in stockData.itertuples():
-	# 	print row
+	bestRes = (bestParam, bestRoi)
+	return strategyResList, bestRes
 
 if __name__=="__main__":
-	pd.DataFrame.mask = filtZero
-	runbackTest('0005')
+	params = globals()["bbDefualtParams"]()
+	print params
+	# params['stockData'] = stockData
+	bStratRes, bBstRes = runbackTest('0005', "BollingerBands", True, **params )
+
+	bParam = globals()["bbparseparams"](bBstRes[0])
+	print bParam
+	runbackTest('0005', "BollingerBands", False, **bParam)
+	# runbackTest('0005', "BollingerBands", False, **params)
 
 
 

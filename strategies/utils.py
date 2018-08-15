@@ -33,3 +33,21 @@ high::money::numeric,low::money::numeric, adjclose::money::numeric, volume from 
 extract(epoch from (date(datetime)+ interval \'8 hour\')) < 1380173200'%tableName,con=engine)
 			return stockData
 
+def getStockDataTrain(code, isTrain):
+	code = code.lstrip("0")
+	symbolList = getSymbolList()
+	stockData = pd.DataFrame()
+	for symbol in symbolList:
+		if(code == symbol[0]):
+			tableName = symbol[1]
+			engine = create_engine('postgresql://runner:tester@localhost/stockdb', echo=False) 
+			if isTrain:
+				#get data from 2013/07/13 to 2016/12/12
+				stockData = pd.read_sql_query('select datetime,open::money::numeric,close::money::numeric,\
+high::money::numeric,low::money::numeric, adjclose::money::numeric, volume from %s where extract(epoch from (date(datetime)+ interval \'8 hour\')) > 1375171200 and \
+extract(epoch from (date(datetime)+ interval \'8 hour\')) < 1481558480'%tableName,con=engine)
+			if (not isTrain):
+				stockData = pd.read_sql_query('select datetime,open::money::numeric,close::money::numeric,\
+high::money::numeric,low::money::numeric, adjclose::money::numeric, volume from %s where \
+extract(epoch from (date(datetime)+ interval \'8 hour\')) > 1481558480'%tableName,con=engine)	
+			return stockData

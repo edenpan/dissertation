@@ -17,6 +17,15 @@ import itertools
 import pandas as pd
 import numpy as np
 
+def parseparams(para):
+	n = []
+	k = []
+	temPara = para.split('-')
+	n.append(int(temPara[-2]))
+	k.append(float(temPara[-1]))
+	return {'n': n, 'k': k}
+
+
 
 def score(row):
 	if (row['middle'] == np.nan):
@@ -34,27 +43,34 @@ def checkParam(n):
 		if i <= 1:
 			raise Exception("parameters input error, %s less than 2", i)
 
-def BollingerBands(code, n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250], \
-	k = [1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5]):
-
-	stockData = utils.getStockData(code)
+def defaultParam():
+	n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250]
+	k = [1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5]
+	parms = {'n': n, 'k': k}
+	return parms
+#return the running result that whether buy or sell and the total stratey number base on the parameter that input
+def BollingerBands(stockData, **kwargs):
 	cnt = 0
 	scoreRes = pd.DataFrame()
+	n = kwargs.get('n')
+	k = kwargs.get('k')
 	checkParam(n)
 	for i in n:
+			# if the params is valid just skip this one:
+			# such as the situation that the data is not enough for the parameter.
+			if len(stockData) <= i - 1:
+				continue;
 			ave = pd.Series(stockData['adjclose'].rolling(i).mean().values, index = stockData['datetime'])
 			std = pd.Series(stockData['adjclose'].rolling(i).std().values, index = stockData['datetime'])
 			for time in k:
 				upper = ave + time * std
 				lower = ave - time * std
 				result = pd.concat([pd.Series(stockData['adjclose'].values, index = stockData['datetime']), ave, lower, upper], keys = ['adjclose','middle', 'lower', 'upper'], axis = 1)
-				
-				result['score' + str(i) + '_' +str(time)] = result.apply (lambda row: score(row),axis=1)
-				print result
-				# score['score' + str(i) + '_' +str(time)] = result['score' + str(i) + '_' +str(time)]
+				scoreRes['score' + '-' + str(i) + '-' +str(time)] = result.apply (lambda row: score(row),axis=1)
 				cnt = cnt + 1
-				# print score
-	print "total Strategy: " + str(cnt)			
+				
+	return scoreRes, cnt				
+	
 
 if __name__=="__main__":
 	BollingerBands("5", [10], [1.5])

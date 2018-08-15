@@ -68,6 +68,7 @@ def psosma():
 		i += 1
 		if i % (iterMax/10) == 0:
 			print '.'
+			
 	print '\nParticle Swarm Optimisation\n'
 	print 'PARAMETERS\n','-'*9
 	print 'Population size : ', popSize

@@ -15,8 +15,9 @@ import utils
 import itertools
 import pandas as pd
 import numpy as np
+from baseStrategy import baseStrategy
 
-
+# class tradingRangeBreakoutStrat(baseStrategy):
 def score(row):
 	if (row['highest'] == np.nan) or (row['lowest'] == np.nan):
 		return 0.0
@@ -34,7 +35,6 @@ def checkParam(n):
 			raise Exception("parameters input error, %s less than 2", i)
 
 def tradingRangeBreakout(code, n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250]):
-
 	stockData = utils.getStockData(code)
 	cnt = 0
 	scoreRes = pd.DataFrame()
@@ -46,7 +46,7 @@ def tradingRangeBreakout(code, n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 
 			result = pd.concat([pd.Series(stockData['adjclose'].values, index = stockData['datetime']), highest, lowest], keys = ['adjclose','highest','lowest'], axis = 1)
 			# print result
 			scoreRes['score' + str(i)] = result.apply (lambda row: score(row),axis=1)
-	# print scoreRes	
+	print scoreRes	
 	print "total Strategy: " + str(cnt)			
 
 if __name__=="__main__":
