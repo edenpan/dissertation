@@ -6,7 +6,12 @@
 # return: roi(roi = (capNow-oriCap)/oriCap)
 #The problem is how to set this as an interface that the pso or other's only need to call this function, rather then
 # to call the real implement strategy?
-import importlib
+from  bb import BollingerBands
+from  bb import defaultParam as bbDefualtParams
+from  bb import parseparams as bbparseparams
+from  ma import defaultParam as maDefualtParams
+from  ma import parseparams as maparseparams
+from  ma import ma as maStrategy
 import sys
 sys.path.append('../')
 import utils
@@ -16,9 +21,9 @@ import pandas as pd
 def filtZero(df, key, value):
 	return df[df[key] != value]
 
-def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
+def runbackTest(stockData, strategyName, oriCap = 10000.00, **kwargs):
 	pd.DataFrame.mask = filtZero
-	result, n = strategy.run(stockData, **kwargs)
+	result, n = globals()[strategyName](stockData, **kwargs)
 	bestRoi = -99999.99
 	bestParam = ''
 	strategyResList = []
@@ -50,7 +55,8 @@ def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
 		if bestRoi < roi:
 			bestRoi = roi
 			bestParam = result.columns[i]
-		strategyResList.append({strategy.strategyName +"_" + str(result.columns[i]) : (roi, execList)})
+		strategyResList.append({strategyName +"_" + str(result.columns[i]) : (roi, execList)})
+		
 		i = i + 1
 	bestRes = (bestParam, bestRoi)
 	return strategyResList, bestRes
@@ -58,21 +64,17 @@ def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
 
 
 if __name__=="__main__":
-	module = importlib.import_module("BollingerBandsStrategy")
-	class_ = getattr(module, "BollingerBandsStrategy")
-	strategy = class_()
-
-	params = strategy.defaultParam()
+	params = globals()["bbDefualtParams"]()
 	print params
 	# params['stockData'] = stockData
 	isTrain = True
 	stockDataTrain = utils.getStockDataTrain("0005", isTrain)
-	bStratRes, bBstRes = runbackTest(stockDataTrain, strategy, **params )
+	bStratRes, bBstRes = runbackTest(stockDataTrain, "BollingerBands", **params )
 	print bStratRes, bBstRes
-	bParam = strategy.parseparams(bBstRes[0])
+	bParam = globals()["bbparseparams"](bBstRes[0])
 	print bParam
 	stockDataTest = utils.getStockDataTrain("0005", not isTrain)
-	print runbackTest(stockDataTest, strategy, **bParam)
+	print runbackTest(stockDataTest, "BollingerBands", **bParam)
 	# runbackTest('0005', "BollingerBands", False, **params)
 
 

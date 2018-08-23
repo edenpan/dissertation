@@ -42,17 +42,19 @@ class BollingerBandsStrategy:
 		return 0.0
 
 	def checkParam(self, n):
-		# print n
+		if 0 == len(kwargs):
+			return False
 		for i in n:
 			if i <= 1:
-				raise Exception("parameters input error, %s less than 2", i)
+				return False
+		return True				
 
 	def defaultParam(self):
 		n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250]
 		k = [1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5]
 		parms = {'n': n, 'k': k}
 		return parms
-		
+
 	#return the running result that whether buy or sell and the total stratey number base on the parameter that input
 	def run(self, stockData, **kwargs):
 		cnt = 0
@@ -78,9 +80,9 @@ class BollingerBandsStrategy:
 
 if __name__=="__main__":
 	stockDataTrain = utils.getStockDataTrain("0005", True)
-	bb = bbStrategy()
+	bb = BollingerBandsStrategy()
 	params = bb.defaultParam()
-	bb.bollingerBands(stockDataTrain, **params)
+	bb.run(stockDataTrain, **params)
 
 
 

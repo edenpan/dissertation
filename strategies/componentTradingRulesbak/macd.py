@@ -29,6 +29,7 @@ def score(row):
 	return 0.0
 
 
+
 def macd(code, nl=[15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200, 250], ns= [1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200]):
 	stockData = utils.getStockData(code)
 	cnt = 0
