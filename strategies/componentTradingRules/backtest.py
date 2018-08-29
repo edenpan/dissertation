@@ -20,7 +20,7 @@ def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
 	pd.DataFrame.mask = filtZero
 	result, n = strategy.run(stockData, **kwargs)
 	bestRoi = -99999.99
-	bestParam = ''
+	bestParam = ""
 	strategyResList = []
 	i = 0
 	while i < n:
@@ -28,7 +28,7 @@ def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
 		execList = []
 		state = False
 		stockNum = 0.0
-		bestParam = result.columns[i]
+		# bestParam = result.columns[i]
 		effectRows = result.mask(result.columns[i], 0.0)
 		for date, signal in effectRows[result.columns[i]].iteritems():
 			#if the singal is buy(>0) and the state is False that no hold any stock,will excute buy
@@ -48,10 +48,11 @@ def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
 			cap = stockData.iloc[-1].adjclose * stockNum
 		roi = (cap-oriCap)/oriCap
 		if bestRoi < roi:
-			bestRoi = roi
 			bestParam = result.columns[i]
-		strategyResList.append({strategy.strategyName +"_" + str(result.columns[i]) : (roi, execList)})
+			bestRoi = roi
+		strategyResList.append({strategy.strategyName +"-" + str(result.columns[i]) : (roi, execList)})
 		i = i + 1
+	# print "runtimes: " + str(i)		
 	bestRes = (bestParam, bestRoi)
 	return strategyResList, bestRes
 

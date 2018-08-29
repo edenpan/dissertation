@@ -18,12 +18,13 @@ class MovingAverage:
 	def __init__(self):
 		self.strategyName = "MovingAverageStrategy"
 
+	#use to parse the result that return by the backtest run. "ns_nl" pattern
 	def parseparams(self, para):
 		n = []
 		k = []
-		temPara = para.split('-')
-		n.append(int(temPara[-2]))
-		k.append(float(temPara[-1]))
+		temPara = para.split('_')
+		n.append(int(temPara[-1]))
+		k.append(int(temPara[-2]))
 		return {'nl': n, 'ns': k}
 
 	def defaultParam(self):
@@ -69,7 +70,7 @@ class MovingAverage:
 					buy =  smas > smal
 					sell =  smas < smal
 					result = pd.concat([smal,smas, buy, sell], keys = ['smal','smas', 'buy', 'sell'], axis = 1)
-					scoreRes['score' + str(s) + '_' + str(l)] = result.apply (lambda row: self.score(row),axis=1)
+					scoreRes[str(s) + '_' + str(l)] = result.apply (lambda row: self.score(row),axis=1)
 		# print "total Strategy: " + str(cnt)		
 		# print scoreRes
 		return scoreRes, cnt	

@@ -41,13 +41,15 @@ class BollingerBandsStrategy:
 			return -1.0
 		return 0.0
 
-	def checkParam(self, n):
+	def checkParams(self,  **kwargs):
 		if 0 == len(kwargs):
 			return False
+		n = kwargs.get('n')
+		k = kwargs.get('k')
 		for i in n:
 			if i <= 1:
 				return False
-		return True				
+		return True	
 
 	def defaultParam(self):
 		n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250]
@@ -61,7 +63,7 @@ class BollingerBandsStrategy:
 		scoreRes = pd.DataFrame()
 		n = kwargs.get('n')
 		k = kwargs.get('k')
-		self.checkParam(n)
+		self.checkParams(**kwargs)
 		for i in n:
 				# if the params is valid just skip this one:
 				# such as the situation that the data is not enough for the parameter.
@@ -73,7 +75,7 @@ class BollingerBandsStrategy:
 					upper = ave + time * std
 					lower = ave - time * std
 					result = pd.concat([pd.Series(stockData['adjclose'].values, index = stockData['datetime']), ave, lower, upper], keys = ['adjclose','middle', 'lower', 'upper'], axis = 1)
-					scoreRes['score' + '-' + str(i) + '-' +str(time)] = result.apply (lambda row: self.score(row),axis=1)
+					scoreRes[str(i) + '-' +str(time)] = result.apply (lambda row: self.score(row),axis=1)
 					cnt = cnt + 1
 		return scoreRes, cnt				
 	

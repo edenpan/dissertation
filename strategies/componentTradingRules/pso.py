@@ -28,7 +28,7 @@ class ParticleSwarmOp:
 		self.w = 1.3
 		self.errCrit = 0.00001
 		self.popSize = 5
-		self.iterMax = 50
+		self.iterMax = 30
 		self.stockData = utils.getStockDataTrain("0005", True)
 		
 
