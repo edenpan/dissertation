@@ -32,10 +32,17 @@ class TimeVariantParticleSwarmOp(pso.ParticleSwarmOp):
 		self.popSize = 5
 		self.iterMax = 50
 		self.stockData = utils.getStockDataTrain("0005", True)
-	
+		
 	def paramAdj(self, p):
-		print self.iterCnt
 		tempExecParams = dict()
+		randomSize = self.iterMax*self.popSize*len(self.searchParams)
+		r1 = numpy.random.uniform(size=randomSize)
+		r2 = numpy.random.uniform(size=randomSize)
+		r3 = numpy.random.uniform(size=randomSize)
+		r4 = numpy.random.uniform(size=randomSize)
+		r5 = numpy.random.uniform(size=randomSize)
+		r6 = numpy.random.uniform(size=randomSize)
+		randCnt = 0
 		while not self.strategy.checkParams(**tempExecParams):
 			tempExecParams = dict()
 			for key, value in self.searchParams.iteritems():
@@ -43,17 +50,24 @@ class TimeVariantParticleSwarmOp(pso.ParticleSwarmOp):
 				#because c1,c2 and w will keeping decrease and a high possible that decrease into 0 ,that can never go out the loop
 				#the problem should solve.
 				#wait me to find a more efficent way~
-				self.w = (self.wmax-self.wmin) * (self.iterMax-self.iterCnt)/self.iterMax + self.wmin
+				v = len(value)-1
+				self.w = 0.5 + r6[randCnt]
 				self.c1 = (self.c1max-self.c1min) * (self.iterMax-self.iterCnt)/self.iterMax + self.c1min
 				self.c2 = (self.c2max-self.c2min) * (self.iterMax-self.iterCnt)/self.iterMax + self.c2min
 				
-				p.v[key] = int((self.w * p.v[key] + self.c1 * random.random() * (p.best.params[key] - p.params[key]) + self.c2 * random.random() * (self.gbest.params[key] - p.params[key])) * len(value)) 
-				print "key:" + str(key) + "\tv: " + str(p.v) + "\t param:" + str(p.params)
-				p.params[key] = (p.params[key] + p.v[key]) % (len(value))
-				print "key" + str(key) + "\tparams:" + str(p.params)	
+				p.v[key] = int((self.w * p.v[key] + self.c1 * r1[randCnt] * (p.best.params[key] - p.params[key]) + self.c2 * r2[randCnt] * (self.gbest.params[key] - p.params[key])) * len(value)) 
+				if (p.v[key] == 0):
+					if r3[randCnt] < 0.5:
+						p.v[key] = r4[randCnt]  * v
+					else:
+						p.v[key] = r5[randCnt] * v
+				p.v[key] = numpy.sign(p.v[key]) * min(abs(v), len(value)-1)																			
+				p.params[key] = int((p.params[key] + p.v[key]) % (len(value)))
+				# print "key:\t" + str(key) + "\tparams:" + str(p.params)	
 				tempExecParams[key] = []
 				tempExecParams[key].append(value[p.params[key]])
-				print "tempExecParams: " + str(tempExecParams)
+				randCnt = randCnt + 1
+				# print "tempExecParams: " + str(tempExecParams)
 		p.execparm = tempExecParams
 
 if __name__=="__main__":	

@@ -50,4 +50,5 @@ def tradingRangeBreakout(code, n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 
 	print "total Strategy: " + str(cnt)			
 
 if __name__=="__main__":
+	
 	tradingRangeBreakout("5")
