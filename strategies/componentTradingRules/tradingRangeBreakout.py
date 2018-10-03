@@ -4,8 +4,7 @@
 # tradingRangeBreakout.py : It calculates the highest and lowest close price of past n days as follows:
 #							Ht,n =max(pt−1,pt−2,...,pt−n), the t's days previous n th days highest price
 #							Lt,n =min(pt−1,pt−2,...,pt−n),the t's days previous n th days lowest price
-# parameters: nl: long-period moving average lenth :[15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200, 250]
-#			  ns: short-period moving average lenth :[1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200 ]
+# parameters: n: The calculating day ranges.
 # Suppose the close price of trading day t is pt
 # singal: buy signal : pt > Ht,n
 #		  sell signal : pt < Lt,n
@@ -24,7 +23,7 @@ def score(row):
 	# when today's adjclose is the highest price to buy
 	if row['adjclose'] == row['highest']:
 		return 1.0
-	# when today's adjclose is the lowest price to 	sell
+	# when today's adjclose is the lowest price to sell
 	if row['adjclose'] == row['lowest']:
 		return -1.0
 	return 0.0

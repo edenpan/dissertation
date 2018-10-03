@@ -33,12 +33,12 @@ class Bruteforce:
 if __name__=="__main__":
 	bf = Bruteforce()
 	bf.setStockData("0005", True)
-	# bf.setStrategy("MovingAverage")
-	bf.setStrategy("BollingerBandsStrategy")
+	bf.setStrategy("MovingAverage")
+	# bf.setStrategy("BollingerBandsStrategy")
 	bStratRes, bBstRes = bf.run()
 	print bBstRes
-	# bf.setStrategy("MovingAverage", bBstRes[0])
-	bf.setStrategy("BollingerBandsStrategy", bBstRes[0])
+	bf.setStrategy("MovingAverage", bBstRes[0])
+	# bf.setStrategy("BollingerBandsStrategy", bBstRes[0])
 	bf.setStockData("0005", False)
 	bStratRes, bBstRes = bf.run()
 	print bStratRes, bBstRes

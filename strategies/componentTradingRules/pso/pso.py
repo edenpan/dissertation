@@ -4,6 +4,7 @@ import random
 from math import sin, sqrt
 from backtest import runbackTest
 import sys
+sys.path.append('../../')
 sys.path.append('../')
 import utils
 import copy
@@ -28,7 +29,7 @@ class ParticleSwarmOp:
 		self.w = 1.3
 		self.errCrit = 0.00001
 		self.popSize = 5
-		self.iterMax = 30
+		self.iterMax = 50
 		self.stockData = utils.getStockDataTrain("0005", True)
 		
 
@@ -64,6 +65,7 @@ class ParticleSwarmOp:
 			p.best = p
 		self.particles = particles
 
+	# This a common part that used to process as precedure of PSO.
 	def pso(self, strategyName):
 		self.setStrategy(strategyName)
 		self.initParticles()
@@ -74,24 +76,8 @@ class ParticleSwarmOp:
 		fitness = 0.0
 		self.iterCnt = 0
 		# while fitness < goalFittness and i < 50:
-		while self.iterCnt < self.iterMax:
-			for p in self.particles:
-				_, bestfitness = runbackTest(self.stockData, self.strategy, **p.execparm)
-				
-				print bestfitness
-				fitness = bestfitness[1]
-				# print "Fitness:" + str(bestfitness[1])
-				if fitness > p.fitness:
-					#update the p'th best record.
-					p.fitness = fitness
-					p.best = p
-					#update the global best record.
-				if fitness > self.gbest.fitness:
-					# print("find one%s,%s", p.execparm, p.params)
-					self.gbest = copy.deepcopy(p)
-				self.paramAdj(p)
-			self.iterCnt += 1
-
+		# self.stopConMaxDist( 0.5)
+		self.stopConImpBest(self.iterMax/8)
 		print("find one%s,%s", self.gbest.execparm, self.gbest.params)				
 		print '\nParticle Swarm Optimisation\n'
 		print 'PARAMETERS\n','-'*9
@@ -120,6 +106,65 @@ class ParticleSwarmOp:
 				tempExecParams[key] = []
 				tempExecParams[key].append(value[p.params[key]])
 		p.execparm = tempExecParams
+
+	#return True means continue test;False will stop
+	def stopConMaxDist(self, distThreshold):
+		stop = False
+		self.distThreshold = distThreshold
+		while (not stop) and (self.iterCnt < self.iterMax ):
+			dist = 0.0
+			self.iterCnt += 1
+			for p in self.particles:
+				_, bestfitness = runbackTest(self.stockData, self.strategy, **p.execparm)
+				print bestfitness
+				fitness = bestfitness[1]
+				
+				if fitness > p.fitness:
+					#update the p'th best record.
+					p.fitness = fitness
+					p.best = p
+					#update the global best record.
+				if fitness > self.gbest.fitness:
+					# print("find one%s,%s", p.execparm, p.params)
+					self.gbest = copy.deepcopy(p)
+
+				if self.iterCnt > self.iterMax/4:
+					if abs(fitness - self.gbest.fitness) > dist:
+						dist = abs(fitness - self.gbest.fitness)
+						# print "dist:" + str(dist) + "result from: " + str(fitness) + str(self.gbest.fitness)
+						# print "execparm:" + str(p.execparm)
+						# print "gbestexecparm: " + str(self.gbest.execparm)
+					if dist > self.distThreshold:
+						stop = True
+				self.paramAdj(p)								
+
+	def stopConImpBest(self, t):
+		stop = False
+		self.stopThreshold  = t
+		keepCnt = 0
+		while (not stop) and (self.iterCnt < self.iterMax ):
+			keepCnt += 1
+			self.iterCnt += 1
+			for p in self.particles:
+				_, bestfitness = runbackTest(self.stockData, self.strategy, **p.execparm)
+				print bestfitness
+				fitness = bestfitness[1]
+				
+				if fitness > p.fitness:
+					#update the p'th best record.
+					p.fitness = fitness
+					p.best = p
+					#update the global best record.
+				if fitness > self.gbest.fitness:
+					print("find one%s,%s", p.execparm, p.params)
+					print("original one%s,%s", self.gbest.execparm, self.gbest.params)
+					self.gbest = copy.deepcopy(p)
+					keepCnt = 0
+				self.paramAdj(p)
+
+			if keepCnt > self.stopThreshold:
+					# print 'will stop ' + str(keepCnt )
+					stop = True				
 
 
 if __name__=="__main__":

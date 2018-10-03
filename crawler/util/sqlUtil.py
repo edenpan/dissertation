@@ -89,13 +89,13 @@ def testList():
 	l.append("'2015-07-01',17638.119141,17801.830078,17638.119141,17757.910156,17757.910156,87010000")
 	l.append("'2015-07-02',17763.320313,17825.490234,17687.519531,17730.109375,17730.109375,83080000")
 	insertList = "INSERT INTO aac_tech(Datetime, Open, High, Low, Close, AdjClose, Volume) VALUES "
-	print str(l)
+	print(str(l))
 	i = 0;
 	# insertList = "["
 	for i in range(len(l) - 1):
 		insertList += "(" + l[i] +"),"
 	insertList += "(" + l[len(l)-1] +");"	
-	print insertList
+	# print insertList
 	cur.execute(insertList)
 	conn.commit()
 
@@ -109,9 +109,9 @@ def testPd():
 	d = []
 	for a in l:
 		d.append(a.split(','))
-	print d
+	# print d
 	df = pd.DataFrame(data=d, columns = ['datetime' ,'open' ,'high' ,'low' ,'close' ,'adjclose' ,'volume'])
-	print df 
+	# print df 
 	insertPd('aac_tech', df)
 
 def getDaliyData(tableName):

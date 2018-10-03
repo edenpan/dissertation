@@ -7,7 +7,7 @@ import random
 from math import sin, sqrt
 from backtest import runbackTest
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 import utils
 import copy
 import importlib
