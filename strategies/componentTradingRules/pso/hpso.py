@@ -73,7 +73,8 @@ class HierarchinalParticleSwarmOp(pso.ParticleSwarmOp):
 
 if __name__=="__main__":	
 	pso = HierarchinalParticleSwarmOp()
-	pso.pso( "MovingAverage")
-	pso.pso( "MacdHistogram")
+	# pso.pso( "MovingAverage")
+	# pso.pso( "MacdHistogram")
+	pso.pso( "StochasticOscillator")
 
-	
+

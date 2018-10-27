@@ -32,13 +32,19 @@ class Bruteforce:
 if __name__=="__main__":
 	bf = Bruteforce()
 	bf.setStockData("0005", True)
-	bf.setStrategy("MacdHistogram")
+	# bf.setStrategy("MacdHistogram")
+	# bf.setStrategy("MacdHistogram")
 	# bf.setStrategy("MovingAverage")
 	# bf.setStrategy("MovingAveConvergeDiver")
 	# bf.setStrategy("BollingerBandsStrategy")
+	# bf.setStrategy("StochasticOscillator")
+	bf.setStrategy("MovingMomentum")
+
 	bStratRes, bBstRes = bf.run()
 	print bBstRes
-	bf.setStrategy("MacdHistogram", bBstRes[0])
+	# bf.setStrategy("MacdHistogram", bBstRes[0])
+	bf.setStrategy("StochasticOscillator", bBstRes[0])
+	bf.setStrategy("MovingMomentum", bBstRes[0])
 	# bf.setStrategy("MovingAveConvergeDiver", bBstRes[0])
 	# bf.setStrategy("BollingerBandsStrategy", bBstRes[0])
 	bf.setStockData("0005", False)

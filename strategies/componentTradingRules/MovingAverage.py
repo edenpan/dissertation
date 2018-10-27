@@ -66,16 +66,23 @@ class MovingAverage:
 				if l > s:
 					if len(stockData) <= l - 1:
 						continue
-					smal = pd.Series(stockData['adjclose'].rolling(l).mean().values, index = stockData['datetime'])
-					smas = pd.Series(stockData['adjclose'].rolling(s).mean().values, index = stockData['datetime'])
+					result = self.calculate(stockData, l, s)
 					cnt = cnt + 1
-					buy =  smas > smal
-					sell =  smas < smal
-					result = pd.concat([smal,smas, buy, sell], keys = ['smal','smas', 'buy', 'sell'], axis = 1)
 					scoreRes[str(s) + '_' + str(l)] = result.apply (lambda row: self.score(row),axis=1)
 		# print "total Strategy: " + str(cnt)		
 		# print scoreRes
 		return scoreRes, cnt	
+
+	#return the smal, smas, buy and sell so that it can be used in other algorithm	
+	def calculate(self, stockData, l, s):
+		smal = pd.Series(stockData['adjclose'].rolling(l).mean().values, index = stockData['datetime'])
+		smas = pd.Series(stockData['adjclose'].rolling(s).mean().values, index = stockData['datetime'])
+		cnt = cnt + 1
+		buy =  smas > smal
+		sell =  smas < smal
+		result = pd.concat([smal,smas, buy, sell], keys = ['smal','smas', 'buy', 'sell'], axis = 1)
+		return result
+
 
 if __name__=="__main__":
 	stockDataTrain = utils.getStockDataTrain("0005", True)

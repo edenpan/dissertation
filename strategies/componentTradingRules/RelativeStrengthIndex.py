@@ -94,7 +94,7 @@ class RelativeStrengthIndex:
 			stockData['rsi'] = rsi
 			for b in ob:
 				for s in os:
-					scoreRes['score' + str(i) + '_' + str(b) + '_' + str(s)] = stockData.apply (lambda row: self.score(row, b , s),axis=1)
+					scoreRes[str(i) + '_' + str(b) + '_' + str(s)] = stockData.apply (lambda row: self.score(row, b , s),axis=1)
 					cnt = cnt + 1
 			# print stockData
 		scoreRes['datetime'] = 	stockData['datetime']
