@@ -1,7 +1,7 @@
 # coding: utf-8
 # autor: Eden
 # date: 2018-08-03
-# sto.py :  momentum indicator. The calculation of STO involves the high, low and close price in a look-back period n.
+# sto.py :  momentum indicator.Stochastic Oscillator. The calculation of STO involves the high, low and close price in a look-back period n.
 #			STO = 100*(Pt - Pl)/(Ph - Pl); Pt - the close price of day t.STO --> %K;
 #			%D: %D = 3-day SMA of %K
 #			plowest and phihgest is the lowest low and highest high price in the look-back period n

@@ -11,6 +11,13 @@ import copy
 import importlib
 
 
+# The base class of 
+# Including stopping condition (cause this part is related with pso iterate can not write separetely.)
+# add other kind of PSO only need to change the adjParam() that the way change the params
+
+
+
+
 # popSize the particles number in the paper, there are 5 particles.
 
 
@@ -24,14 +31,7 @@ class ParticleSwarmOp:
 	
 	#set the pso basic param
 	def __init__(self):
-		self.c1 = 2
-		self.c2 = 2
-		self.w = 1.3
-		self.errCrit = 0.00001
-		self.popSize = 5
-		self.iterMax = 50
-		self.stockData = utils.getStockDataTrain("0005", True)
-		
+		pass
 
 	def setStrategy(self, strategyName):
 		module = importlib.import_module(strategyName)
@@ -41,6 +41,10 @@ class ParticleSwarmOp:
 		self.strategy = strategy
 		self.searchParams = strategy.defaultParam()
 		self.dimensions = len(self.searchParams)
+		self.iterMax = 1
+		for key, value in self.searchParams.iteritems():
+			self.iterMax = self.iterMax * len(value)
+		self.iterMax = self.iterMax/20
 		
 
 	#initialize the particles
@@ -52,47 +56,61 @@ class ParticleSwarmOp:
 			p.v = {}
 			p.execparm = {}
 			for key, value in self.searchParams.iteritems():
-
-				t = random.randint(0, len(value) - 1)
+				#keep each Particle began to search in the different part
+				t = random.randint(((len(value) - 1)/self.popSize) * i, ((len(value) - 1)/self.popSize) * (i + 1) )
 				p.params[key] = t
 				p.execparm[key] = []
 				p.execparm[key].append(value[t])
 				p.v[key] = random.randint(0, len(value))	
-			print p.execparm
 			_, best = runbackTest(self.stockData, self.strategy, **p.execparm)
 			p.fitness = float(best[1])	
 			particles.append(p)
 			p.best = p
+			print best
 		self.particles = particles
 
-	# This a common part that used to process as precedure of PSO.
+	# used to initial parameter
+	def initParameters(self):
+		self.c1 = 2
+		self.c2 = 2
+		self.w = 0.9
+		# self.errCrit = 0.00001
+		self.popSize = 5
+		self.iterMax = 50
+		self.stockData = utils.getStockDataTrain("0005", True)
+		self.psoName = 'basic PSO'
+		return
+
+	# This a common part that used to process as procedure of PSO.
 	def pso(self, strategyName):
 		self.setStrategy(strategyName)
+		self.initParameters()
 		self.initParticles()
+
 		
 		# let the first particle be the global best
 		self.gbest = copy.deepcopy(self.particles[0])
-		# goalFittness = 0.17
 		fitness = 0.0
 		self.iterCnt = 0
 		# while fitness < goalFittness and i < 50:
 		# self.stopConMaxDist( 0.5)
-		self.stopConImpBest(self.iterMax/8)
+		# self.stopWithMaxIterCnt()
+		# print "self.iterMax: " + str(self.iterMax)
+		self.stopConImpBest(self.iterMax/4)
 		print("find one%s,%s", self.gbest.execparm, self.gbest.params)				
 		print '\nParticle Swarm Optimisation\n'
 		print 'PARAMETERS\n','-'*9
 		print 'Population size : ', self.popSize
 		print 'Dimensions	  : ', self.dimensions
-		print 'c1			  : ', self.c1
-		print 'c2			  : ', self.c2
-		print 'function		:  f6'
+		print 'ParticleSwarmOp Name :', self.psoName
+		print 'stop Condition :', self.stopCondition
+		print 'strategyName:', strategyName
 		print 'RESULTS\n', '-'*7
 		print 'gbest fitness   : ', self.gbest.fitness
 		print 'gbest params	: ', self.gbest.params
 		print 'gbest execparm	: ', self.gbest.execparm
 		print 'iterations	  : ', self.iterCnt
-		for p in self.particles:
-			print 'particles	  : ', p.execparm
+		
 
 	def paramAdj(self, p):
 		tempExecParams = dict()
@@ -107,8 +125,29 @@ class ParticleSwarmOp:
 				tempExecParams[key].append(value[p.params[key]])
 		p.execparm = tempExecParams
 
+	#blow is the stop condition
+	def stopWithMaxIterCnt(self):
+		self.stopCondition = 'stopWithMaxIterCnt'
+		while (self.iterCnt < self.iterMax ):
+			self.iterCnt += 1
+			for p in self.particles:
+				_, bestfitness = runbackTest(self.stockData, self.strategy, **p.execparm)
+				print bestfitness
+				fitness = bestfitness[1]
+				
+				if fitness > p.fitness:
+					#update the p'th best record.
+					p.fitness = fitness
+					p.best = p
+					#update the global best record.
+				if fitness > self.gbest.fitness:
+					print 'find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.'
+					self.gbest = copy.deepcopy(p)
+				self.paramAdj(p)		
+
 	#return True means continue test;False will stop
 	def stopConMaxDist(self, distThreshold):
+		self.stopCondition = 'stopConMaxDist'
 		stop = False
 		self.distThreshold = distThreshold
 		while (not stop) and (self.iterCnt < self.iterMax ):
@@ -125,8 +164,8 @@ class ParticleSwarmOp:
 					p.best = p
 					#update the global best record.
 				if fitness > self.gbest.fitness:
-					# print("find one%s,%s", p.execparm, p.params)
 					self.gbest = copy.deepcopy(p)
+					print 'find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.'
 
 				if self.iterCnt > self.iterMax/4:
 					if abs(fitness - self.gbest.fitness) > dist:
@@ -139,6 +178,7 @@ class ParticleSwarmOp:
 				self.paramAdj(p)								
 
 	def stopConImpBest(self, t):
+		self.stopCondition = 'stopConImpBest'
 		stop = False
 		self.stopThreshold  = t
 		keepCnt = 0
@@ -147,7 +187,7 @@ class ParticleSwarmOp:
 			self.iterCnt += 1
 			for p in self.particles:
 				_, bestfitness = runbackTest(self.stockData, self.strategy, **p.execparm)
-				print bestfitness
+				# print bestfitness
 				fitness = bestfitness[1]
 				
 				if fitness > p.fitness:
@@ -156,14 +196,14 @@ class ParticleSwarmOp:
 					p.best = p
 					#update the global best record.
 				if fitness > self.gbest.fitness:
-					print("find one%s,%s", p.execparm, p.params)
-					print("original one%s,%s", self.gbest.execparm, self.gbest.params)
+					print 'find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.'
+					# print("original one%s,%s", self.gbest.execparm, self.gbest.params)
 					self.gbest = copy.deepcopy(p)
 					keepCnt = 0
 				self.paramAdj(p)
 
 			if keepCnt > self.stopThreshold:
-					# print 'will stop ' + str(keepCnt )
+					print 'will stop ' + str(keepCnt )
 					stop = True				
 
 
@@ -172,8 +212,12 @@ if __name__=="__main__":
 	pso = ParticleSwarmOp()
 
 	# pso.pso( "BollingerBandsStrategy")
-	pso.pso( "MovingAverage")
+	# pso.pso( "MovingAverage")
+	pso.pso( "MacdHistogram")
 	# pso.pso( "RelativeStrengthIndex")
+	# pso.pso( "MovingAverage")
+	# pso.pso( "MovingAveConvergeDiver")
+	# pso.pso( "OnBalanceVolAve")
+	# pso.pso( "tradingRangeBreakout")
 	
-	# pso(stockDataTrain, "BollingerBands")
 

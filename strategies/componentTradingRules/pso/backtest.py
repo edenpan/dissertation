@@ -18,7 +18,9 @@ def filtZero(df, key, value):
 
 def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
 	pd.DataFrame.mask = filtZero
+	# running the strategy with the parameter it given
 	result, n = strategy.run(stockData, **kwargs)
+	# print "total running counts: " + str(n)
 	bestRoi = -99999.99
 	bestParam = ""
 	strategyResList = []

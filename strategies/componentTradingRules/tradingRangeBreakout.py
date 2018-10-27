@@ -14,39 +14,58 @@ import utils
 import itertools
 import pandas as pd
 import numpy as np
-from baseStrategy import baseStrategy
 
-# class tradingRangeBreakoutStrat(baseStrategy):
-def score(row):
-	if (row['highest'] == np.nan) or (row['lowest'] == np.nan):
+class tradingRangeBreakout:
+	def __init__(self):
+		self.strategyName = "MovingAverageStrategy"
+
+	#use to parse the result that return by the backtest run. "ns_nl" pattern
+	def parseparams(self, para):
+		n = []
+		n.append(int(para))
+		return {'n': n}
+
+	def defaultParam(self):
+		n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250]
+		parms = {'n': n}
+		return parms
+
+	def score(self, row):
+		if (row['highest'] == np.nan) or (row['lowest'] == np.nan):
+			return 0.0
+		# when today's adjclose is the highest price to buy
+		if row['adjclose'] == row['highest']:
+			return 1.0
+		# when today's adjclose is the lowest price to sell
+		if row['adjclose'] == row['lowest']:
+			return -1.0
 		return 0.0
-	# when today's adjclose is the highest price to buy
-	if row['adjclose'] == row['highest']:
-		return 1.0
-	# when today's adjclose is the lowest price to sell
-	if row['adjclose'] == row['lowest']:
-		return -1.0
-	return 0.0
+	
+	def checkParams(self, **kwargs):
+		if 0 == len(kwargs):
+			return False
+		n = kwargs.get('n')
+		for i in n:
+			if i <= 1:
+				raise Exception("parameters input error, %s less than 2", i)
+	
 
-def checkParam(n):
-	for i in n:
-		if i <= 1:
-			raise Exception("parameters input error, %s less than 2", i)
+	def run(self, stockData, **kwargs):
+		# stockData = utils.getStockData(code)
+		cnt = 0
+		scoreRes = pd.DataFrame()
+		n = kwargs.get('n')
+		for i in n:
+				highest = pd.Series(stockData['adjclose'].rolling(i).max().values, index = stockData['datetime'])
+				lowest = pd.Series(stockData['adjclose'].rolling(i).min().values, index = stockData['datetime'])
+				cnt = cnt + 1
+				result = pd.concat([pd.Series(stockData['adjclose'].values, index = stockData['datetime']), highest, lowest], keys = ['adjclose','highest','lowest'], axis = 1)
+				# print result
+				scoreRes[str(i)] = result.apply (lambda row: self.score(row),axis=1)
+		# print scoreRes	
+		# print "total Strategy: " + str(cnt)			
+		return scoreRes, cnt
 
-def tradingRangeBreakout(code, n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250]):
-	stockData = utils.getStockData(code)
-	cnt = 0
-	scoreRes = pd.DataFrame()
-	checkParam(n)
-	for i in n:
-			highest = pd.Series(stockData['adjclose'].rolling(i).max().values, index = stockData['datetime'])
-			lowest = pd.Series(stockData['adjclose'].rolling(i).min().values, index = stockData['datetime'])
-			cnt = cnt + 1
-			result = pd.concat([pd.Series(stockData['adjclose'].values, index = stockData['datetime']), highest, lowest], keys = ['adjclose','highest','lowest'], axis = 1)
-			# print result
-			scoreRes['score' + str(i)] = result.apply (lambda row: score(row),axis=1)
-	print scoreRes	
-	print "total Strategy: " + str(cnt)			
 
 if __name__=="__main__":
 	

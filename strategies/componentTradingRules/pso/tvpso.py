@@ -21,55 +21,55 @@ class Particle:
 
 class TimeVariantParticleSwarmOp(pso.ParticleSwarmOp):
 
-	def __init__(self):
+	def initParameters(self):
 		self.c1max = 2
 		self.c2max = 2
 		self.c1min = 0.2
 		self.c2min = 0.2
 		self.wmax = 2
-		self.wmin = 0.2
+		self.wmin = 0.4
 		self.errCrit = 0.00001
 		self.popSize = 5
-		self.iterMax = 50
+		# self.iterMax = 50
 		self.stockData = utils.getStockDataTrain("0005", True)
+		self.randomSize = self.iterMax*self.popSize*len(self.searchParams)
+		# print "randomSize" + str(self.randomSize)
+		self.r1 = numpy.random.uniform(size=self.randomSize)
+		self.r2 = numpy.random.uniform(size=self.randomSize)
+		self.r3 = numpy.random.uniform(size=self.randomSize)
+		self.r4 = numpy.random.uniform(size=self.randomSize)
+		self.r5 = numpy.random.uniform(size=self.randomSize)
+		self.r6 = numpy.random.uniform(size=self.randomSize)
+		self.randCnt = 0
+		
 		
 	def paramAdj(self, p):
+		self.psoName = 'TVPSO'
 		tempExecParams = dict()
-		randomSize = self.iterMax*self.popSize*len(self.searchParams)
-		r1 = numpy.random.uniform(size=randomSize)
-		r2 = numpy.random.uniform(size=randomSize)
-		r3 = numpy.random.uniform(size=randomSize)
-		r4 = numpy.random.uniform(size=randomSize)
-		r5 = numpy.random.uniform(size=randomSize)
-		r6 = numpy.random.uniform(size=randomSize)
-		randCnt = 0
+		self.w = (self.wmax - self.wmin) * (self.iterMax - self.iterCnt)/self.iterMax + self.wmin
+		self.c1 = self.c1max - (self.c1max-self.c1min) * (self.iterMax-self.iterCnt)/self.iterMax
+		self.c2 = (self.c2max-self.c2min) * (self.iterMax-self.iterCnt)/self.iterMax + self.c2min
 		while not self.strategy.checkParams(**tempExecParams):
 			tempExecParams = dict()
 			for key, value in self.searchParams.iteritems():
+				self.randCnt = (self.randCnt + 1)%self.randomSize
 				#update c1,c2 and w
 				#because c1,c2 and w will keeping decrease and a high possible that decrease into 0 ,that can never go out the loop
 				#the problem should solve.
-				#wait me to find a more efficent way~
-				v = len(value)-1
-				self.w = 0.5 + r6[randCnt]
-				self.c1 = (self.c1max-self.c1min) * (self.iterMax-self.iterCnt)/self.iterMax + self.c1min
-				self.c2 = (self.c2max-self.c2min) * (self.iterMax-self.iterCnt)/self.iterMax + self.c2min
 				
-				p.v[key] = int((self.w * p.v[key] + self.c1 * r1[randCnt] * (p.best.params[key] - p.params[key]) + self.c2 * r2[randCnt] * (self.gbest.params[key] - p.params[key])) * len(value)) 
-				if (p.v[key] == 0):
-					if r3[randCnt] < 0.5:
-						p.v[key] = r4[randCnt]  * v
-					else:
-						p.v[key] = r5[randCnt] * v
-				p.v[key] = numpy.sign(p.v[key]) * min(abs(v), len(value)-1)																			
+				p.v[key] = int((self.w * p.v[key] + self.c1 * self.r1[self.randCnt] * (p.best.params[key] - p.params[key]) + self.c2 * self.r2[self.randCnt] * (self.gbest.params[key] - p.params[key])))
 				p.params[key] = int((p.params[key] + p.v[key]) % (len(value)))
+				# print 'in the key:' + str(key) + " : params: " + str(p.params[key])
 				# print "key:\t" + str(key) + "\tparams:" + str(p.params)	
 				tempExecParams[key] = []
 				tempExecParams[key].append(value[p.params[key]])
-				randCnt = randCnt + 1
 				# print "tempExecParams: " + str(tempExecParams)
+		self.randCnt = self.randCnt + 1
+		print "\tparams:" + str(tempExecParams)					
 		p.execparm = tempExecParams
 
 if __name__=="__main__":	
 	pso = TimeVariantParticleSwarmOp()
-	pso.pso( "MovingAverage")
+	# pso.pso( "MovingAverage")
+	pso.pso( "MacdHistogram")
+	# pso.pso( "BollingerBandsStrategy")

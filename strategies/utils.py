@@ -51,3 +51,17 @@ extract(epoch from (date(datetime)+ interval \'8 hour\')) < 1481558480'%tableNam
 high::money::numeric,low::money::numeric, adjclose::money::numeric, volume from %s where \
 extract(epoch from (date(datetime)+ interval \'8 hour\')) > 1481558480'%tableName,con=engine)	
 			return stockData
+
+def frange(x, y, jump):
+	k = range(int((y-x)/jump))
+	interval = jump
+	flist = []
+	for i in k:
+		flist.append(i*interval + x)
+	return flist	
+
+
+
+
+
+

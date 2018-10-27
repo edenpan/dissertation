@@ -26,18 +26,20 @@ class Bruteforce:
 		self.dimensions = len(self.searchParams)
 
 	def run(self):
-
 		bStratRes, bBstRes = runbackTest(self.stockData, self.strategy, **self.searchParams)
 		return bStratRes, bBstRes
 
 if __name__=="__main__":
 	bf = Bruteforce()
 	bf.setStockData("0005", True)
-	bf.setStrategy("MovingAverage")
+	bf.setStrategy("MacdHistogram")
+	# bf.setStrategy("MovingAverage")
+	# bf.setStrategy("MovingAveConvergeDiver")
 	# bf.setStrategy("BollingerBandsStrategy")
 	bStratRes, bBstRes = bf.run()
 	print bBstRes
-	bf.setStrategy("MovingAverage", bBstRes[0])
+	bf.setStrategy("MacdHistogram", bBstRes[0])
+	# bf.setStrategy("MovingAveConvergeDiver", bBstRes[0])
 	# bf.setStrategy("BollingerBandsStrategy", bBstRes[0])
 	bf.setStockData("0005", False)
 	bStratRes, bBstRes = bf.run()
