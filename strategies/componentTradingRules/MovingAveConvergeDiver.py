@@ -64,8 +64,8 @@ class MovingAveConvergeDiver:
 		for l in nl:
 			for s in ns:
 				if l > s:
-					smal = pd.Series(stockData['adjclose'].ewm(span = l).mean().values, index = stockData['datetime'])
-					smas = pd.Series(stockData['adjclose'].ewm(span = s).mean().values, index = stockData['datetime'])
+					smal = pd.Series(stockData['adjclose'].ewm(span = l, min_periods=0,adjust=False,ignore_na=False), index = stockData['datetime'])
+					smas = pd.Series(stockData['adjclose'].ewm(span = s, min_periods=0,adjust=False,ignore_na=False), index = stockData['datetime'])
 					cnt = cnt + 1
 					# print smal, smas
 					buy =  smas > smal

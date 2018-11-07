@@ -44,7 +44,7 @@ class ParticleSwarmOp:
 		self.iterMax = 1
 		for key, value in self.searchParams.iteritems():
 			self.iterMax = self.iterMax * len(value)
-		self.iterMax = self.iterMax/20
+		self.iterMax = self.iterMax/10
 		
 
 	#initialize the particles
@@ -66,7 +66,7 @@ class ParticleSwarmOp:
 			p.fitness = float(best[1])	
 			particles.append(p)
 			p.best = p
-			print best
+			# print best
 		self.particles = particles
 
 	# used to initial parameter
@@ -76,27 +76,31 @@ class ParticleSwarmOp:
 		self.w = 0.9
 		# self.errCrit = 0.00001
 		self.popSize = 5
-		self.iterMax = 50
-		self.stockData = utils.getStockDataTrain("0005", True)
+		# self.iterMax = 50
+		# self.stockData = utils.getStockDataTrain("0005", True)
 		self.psoName = 'basic PSO'
 		return
 
+		
+
 	# This a common part that used to process as procedure of PSO.
-	def pso(self, strategyName):
+	def pso(self, strategyName, code):
+
 		self.setStrategy(strategyName)
+		self.iterMax = 50
+		print 'max Iterate: ' + str(self.iterMax)
+		self.stockData = utils.getStockDataTrain(code, True)
 		self.initParameters()
 		self.initParticles()
-
-		
 		# let the first particle be the global best
 		self.gbest = copy.deepcopy(self.particles[0])
 		fitness = 0.0
 		self.iterCnt = 0
 		# while fitness < goalFittness and i < 50:
-		# self.stopConMaxDist( 0.5)
-		# self.stopWithMaxIterCnt()
+		# self.stopConMaxDist(0.5)
+		self.stopWithMaxIterCnt()
 		# print "self.iterMax: " + str(self.iterMax)
-		self.stopConImpBest(self.iterMax/4)
+		# self.stopConImpBest(self.iterMax/2)
 		print("find one%s,%s", self.gbest.execparm, self.gbest.params)				
 		print '\nParticle Swarm Optimisation\n'
 		print 'PARAMETERS\n','-'*9
@@ -105,19 +109,25 @@ class ParticleSwarmOp:
 		print 'ParticleSwarmOp Name :', self.psoName
 		print 'stop Condition :', self.stopCondition
 		print 'strategyName:', strategyName
+		print 'stockCode:', code
 		print 'RESULTS\n', '-'*7
-		print 'gbest fitness   : ', self.gbest.fitness
+		print 'ROI   : ', self.gbest.fitness
 		print 'gbest params	: ', self.gbest.params
 		print 'gbest execparm	: ', self.gbest.execparm
 		print 'iterations	  : ', self.iterCnt
-		
+		# record = 'strategyName:\t' + str(self.strategyName) + '\tcode:\t' + str(code) + '\texecparm:\t' \
+		# + str(self.gbest.execparm) + '\tROI:\t' + str(self.gbest.fitness)
+		record = str(self.strategyName) + '\t' + str(code) + '\t' \
+		+ str(self.gbest.execparm) + '\t' + str(self.gbest.fitness) + '\n'
+		return record
 
 	def paramAdj(self, p):
 		tempExecParams = dict()
 		while not self.strategy.checkParams(**tempExecParams):
 			for key, value in self.searchParams.iteritems():
 				#base on the function: V(t+1) = w*V(t) + C1*r1*(pbest - p[t]) + C2*r2*(gbest - p[t])
-				p.v[key] = int(self.w * p.v[key] + self.c1 * random.random() * (p.best.params[key] - p.params[key]) + self.c2 * random.random() * (self.gbest.params[key] - p.params[key]))
+				p.v[key] = int(self.w * p.v[key] + self.c1 * random.random() * (p.best.params[key] - p.params[key]) + \
+					self.c2 * random.random() * (self.gbest.params[key] - p.params[key]))
 				# print "key:" + str(key) + "\tv: " + str(p.v) + "\t param:" + str(p.params)
 				p.params[key] = (p.params[key] + p.v[key]) % (len(value))
 				# print "key" + str(key) + "\tparams:" + str(p.params)	
@@ -132,7 +142,7 @@ class ParticleSwarmOp:
 			self.iterCnt += 1
 			for p in self.particles:
 				_, bestfitness = runbackTest(self.stockData, self.strategy, **p.execparm)
-				print bestfitness
+				# print bestfitness
 				fitness = bestfitness[1]
 				
 				if fitness > p.fitness:
@@ -155,7 +165,7 @@ class ParticleSwarmOp:
 			self.iterCnt += 1
 			for p in self.particles:
 				_, bestfitness = runbackTest(self.stockData, self.strategy, **p.execparm)
-				print bestfitness
+				# print bestfitness
 				fitness = bestfitness[1]
 				
 				if fitness > p.fitness:
@@ -209,11 +219,32 @@ class ParticleSwarmOp:
 
 if __name__=="__main__":
 	# stockDataTrain = utils.getStockDataTrain("0005", True)
+	allHsiCode = ['5', '11', '23', '388', '939', '1299', '1398', '2318', '2388', '2628', '3328', '3988', \
+	'2', '3', '6', '836', '1038', '12', '16', '17', '83', '101', '688', '823', '1109', '1113',  '2007', \
+	'1', '19', '27', '66', '144', '151', '175', '267', '288', '386', '700', '762', '857', '883', '941', '992', \
+	'1044', '1088', '1928', '2018', '2319', '2382']
+
+	# allHsiCode = ['2382', '19', '151', '1044']
+	# allStrategy = ['MovingAverage', 'BollingerBandsStrategy', 'MacdHistogram', 'RelativeStrengthIndex', 'OnBalanceVolAve', 'tradingRangeBreakout','StochasticOscillator']
+	allStrategy = ['MacdHistogram']
+	# codeName = {'2382': 'SunnyOptical'}
+	codeName = {'5': 'HSBCHoldings', '11': 'HangSengBank', '23': 'BankofEAsia', '388': 'HKEx', '939': 'CCB', '1299': 'AIA', '1398': 'ICBC', '2318': 'PingAn', '2388': 'BOCHongKong', '2628': 'ChinaLife', '3328': 'Bankcomm', '3988': 'BankofChina', '2': 'CLPHoldings', '3': 'HK&ChinaGas', '6': 'PowerAssets', '836': 'ChinaResPower', '1038': 'CKIHoldings', '12': 'HendersonLand', '16': 'SHKPpt', '17': 'NewWorldDev', '83': 'SinoLand', '101': 'HangLungPpt', '688': 'ChinaOverseas', '823': 'LinkREIT', '1109': 'ChinaResLand', '1113': 'CKAsset', '1997': 'WharfREIC', '2007': 'CountryGarden', '1': 'CKHHoldings', '19': 'SwirePacificA', '27': 'GalaxyEnt', '66': 'MTRCorporation', '144': 'ChinaMerPort', '151': 'WantWantChina', '175': 'GeelyAuto', '267': 'CITIC', '288': 'WHGroup', '386': 'SinopecCorp', '700': 'Tencent', '762': 'ChinaUnicom', '857': 'PetroChina', '883': 'CNOOC', '941': 'ChinaMobile', '992': 'LenovoGroup', '1044': 'HenganIntl', '1088': 'ChinaShenhua', '1928': 'SandsChinaLtd', '2018': 'AACTech', '2319': 'MengniuDairy', '2382': 'SunnyOptical'}
+	# allStrategy = ['MovingAverage','BollingerBandsStrategy']
+	# allHsiCode = ['5', '11', '23', '388']
 	pso = ParticleSwarmOp()
 
 	# pso.pso( "BollingerBandsStrategy")
-	# pso.pso( "MovingAverage")
-	pso.pso( "MacdHistogram")
+		
+	for strategy in allStrategy:
+		fileObject = open(strategy+'Result', 'w+')
+		for code in allHsiCode:	
+			record = pso.pso( strategy, code)
+			record = codeName.get(code) + '\t' + str(record)
+			fileObject.write(record)
+		fileObject.close()
+
+	# pso.pso( "MacdHistogram")
+	# pso.pso( "MovingMomentum", '5')
 	# pso.pso( "RelativeStrengthIndex")
 	# pso.pso( "MovingAverage")
 	# pso.pso( "MovingAveConvergeDiver")

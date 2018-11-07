@@ -16,7 +16,7 @@ import pandas as pd
 def filtZero(df, key, value):
 	return df[df[key] != value]
 
-def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
+def runbackTest(stockData, strategy, oriCap = 10000.00, allRate = False, **kwargs):
 	pd.DataFrame.mask = filtZero
 	# running the strategy with the parameter it given
 	result, n = strategy.run(stockData, **kwargs)
@@ -37,11 +37,13 @@ def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
 			#the execute price is just the adjclose price that day's singal.
 			if (signal > 0) and (state == False):
 				stockNum = cap/stockData.loc[stockData["datetime"] == date]["adjclose"].values[0]
+				# stockNum = cap/stockData.loc[stockData["datetime"] == date]["close"].values[0]
 				state = True
 				execList.append((date,"buy",stockNum))
 			#if the singal is Sell(<0) and the state is True that held stocks,will excute sell				
 			if signal < 0 and state:
 				cap = stockData.loc[stockData["datetime"] == date]["adjclose"].values[0]* stockNum
+				# cap = stockData.loc[stockData["datetime"] == date]["close"].values[0]* stockNum
 				stockNum = 0.0
 				state = False
 				execList.append((date,"sell",cap))
@@ -52,10 +54,14 @@ def runbackTest(stockData, strategy, oriCap = 10000.00, **kwargs):
 		if bestRoi < roi:
 			bestParam = result.columns[i]
 			bestRoi = roi
+			# calculate buy-and-hold roi
+			buyAndHold = (stockData.iloc[-1].adjclose - stockData.iloc[0].adjclose)/stockData.iloc[0].adjclose
 		strategyResList.append({strategy.strategyName +"-" + str(result.columns[i]) : (roi, execList)})
 		i = i + 1
-	# print "runtimes: " + str(i)		
-	bestRes = (bestParam, bestRoi)
+	# print "runtimes: " + str(i)	
+	#if allRate = True, then there is only 1 result use to get the SharpeRatio.	
+	
+	bestRes = (bestParam, bestRoi, buyAndHold)
 	return strategyResList, bestRes
 
 

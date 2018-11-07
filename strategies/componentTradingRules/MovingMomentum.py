@@ -64,7 +64,7 @@ class MovingMomentum:
 		# sto_m = [7]
 		# sto_ob = [75]
 		# sto_os = [25]
-		hns = range(8, 12)
+		hns = range(8, 12) 
 		hnl = range(24, 40, 2) 
 		htime = range(8, 15, 1)
 		snl = range(15, 255, 5)
@@ -131,8 +131,8 @@ class MovingMomentum:
 										continue
 									smal = pd.Series(stockData['adjclose'].rolling(sl).mean().values, index = stockData['datetime'])
 									smas = pd.Series(stockData['adjclose'].rolling(ss).mean().values, index = stockData['datetime'])
-									emal = pd.Series(stockData['adjclose'].ewm(span = hl).mean().values, index = stockData['datetime'])
-									emas = pd.Series(stockData['adjclose'].ewm(span = hs).mean().values, index = stockData['datetime'])
+									emal = pd.Series(stockData['adjclose'].ewm(span = hl, min_periods=0,adjust=False,ignore_na=False).mean().values, index = stockData['datetime'])
+									emas = pd.Series(stockData['adjclose'].ewm(span = hs, min_periods=0,adjust=False,ignore_na=False).mean().values, index = stockData['datetime'])
 									macd = emal -emas
 									signalLine = macd.ewm(span = ht).mean()
 									diverse = macd - signalLine
@@ -145,8 +145,9 @@ class MovingMomentum:
 									result = pd.concat([diverse,prediverse, smal, smas, sto, sto_k], keys = ['diverse','prediverse', 'smal', 'smas', 'sto', 'sto_k'], axis = 1)
 									for stob in sto_ob:
 										for stos in sto_os:
+											# useful = str(hl) + '_' + str(hs) + '_' + str(ht) + '_' + str(sl) + '_' + str(ss) + '_' + str(stn) + '_' + str(stm) + '_' + str(stob) + '_' + str(stos)
 											scoreRes[str(hl) + '_' + str(hs) + '_' + str(ht) + '_' + str(sl) + '_' + str(ss) + '_' + str(stn) + '_' + str(stm) + '_' + str(stob) + '_' + str(stos)] = result.apply (lambda row: self.score(row, stob , stos),axis=1)
-									
+									# print "cnt: " + str(cnt)
 									cnt = cnt + 1
 		# print "total Strategy: " + str(cnt)		
 		# print scoreRes

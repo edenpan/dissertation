@@ -77,7 +77,7 @@ class MovingAverage:
 	def calculate(self, stockData, l, s):
 		smal = pd.Series(stockData['adjclose'].rolling(l).mean().values, index = stockData['datetime'])
 		smas = pd.Series(stockData['adjclose'].rolling(s).mean().values, index = stockData['datetime'])
-		cnt = cnt + 1
+		# cnt = cnt + 1
 		buy =  smas > smal
 		sell =  smas < smal
 		result = pd.concat([smal,smas, buy, sell], keys = ['smal','smas', 'buy', 'sell'], axis = 1)

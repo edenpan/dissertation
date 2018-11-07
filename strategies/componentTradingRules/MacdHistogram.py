@@ -34,9 +34,12 @@ class MacdHistogram:
 		# ns = range(8, 21, 1) # 13
 		# nl = range(24, 40, 2) #8
 		# t = range(8, 15, 1) # 6
-		ns = [12]
-		nl = [26]		
-		t = [9]		
+		# ns = [12]
+		# nl = [26]		
+		# t = [9]		
+		ns = [8]
+		nl = [32]		
+		t = [8]		
 		parms = {'nl': nl, 'ns': ns, 'time': t}
 		return parms
 
@@ -72,7 +75,6 @@ class MacdHistogram:
 					if len(stockData) <= l - 1:
 						continue
 					result = self.calculate(stockData, l, s, t)
-					
 					scoreRes[str(s) + '_' + str(l) + '_' + str(t)] = result.apply (lambda row: self.score(row),axis=1)
 					cnt = cnt + 1
 		# print "total Strategy: " + str(cnt)		
@@ -80,10 +82,15 @@ class MacdHistogram:
 		return scoreRes, cnt	
 
 	def calculate(self, stockData, l, s, t):
-		smal = pd.Series(stockData['adjclose'].ewm(span = l).mean().values, index = stockData['datetime'])
-		smas = pd.Series(stockData['adjclose'].ewm(span = s).mean().values, index = stockData['datetime'])
+		# smal = pd.Series(stockData['adjclose'].ewm(span = l).mean().values, index = stockData['datetime'])
+		# smas = pd.Series(stockData['adjclose'].ewm(span = s).mean().values, index = stockData['datetime'])
+
+		smal = pd.Series(stockData['adjclose'].ewm(span = l, min_periods=0,adjust=False,ignore_na=False).mean().values, index = stockData['datetime'])
+		smas = pd.Series(stockData['adjclose'].ewm(span = s, min_periods=0,adjust=False,ignore_na=False).mean().values, index = stockData['datetime'])
+		# smal = pd.Series(stockData['close'].ewm(span = l, min_periods=0,adjust=False,ignore_na=False).mean().values, index = stockData['datetime'])
+		# smas = pd.Series(stockData['close'].ewm(span = s, min_periods=0,adjust=False,ignore_na=False).mean().values, index = stockData['datetime'])
 		macd = smal -smas
-		signalLine = macd.ewm(span = t).mean()
+		signalLine = macd.ewm(span = t).mean()		
 		diverse = macd - signalLine
 		prediverse = diverse.shift(-1)
 		buy =  smas > smal

@@ -17,7 +17,7 @@ import numpy as np
 
 class tradingRangeBreakout:
 	def __init__(self):
-		self.strategyName = "MovingAverageStrategy"
+		self.strategyName = "TradingRangeBreakout"
 
 	#use to parse the result that return by the backtest run. "ns_nl" pattern
 	def parseparams(self, para):
@@ -47,7 +47,8 @@ class tradingRangeBreakout:
 		n = kwargs.get('n')
 		for i in n:
 			if i <= 1:
-				raise Exception("parameters input error, %s less than 2", i)
+				return False
+		return True				
 	
 
 	def run(self, stockData, **kwargs):
@@ -68,5 +69,9 @@ class tradingRangeBreakout:
 
 
 if __name__=="__main__":
+	stockDataTrain = utils.getStockDataTrain("0005", True)
+	trb = tradingRangeBreakout()
+	params = trb.defaultParam()
+	print trb.run(stockDataTrain, **params)
+
 	
-	tradingRangeBreakout("5")

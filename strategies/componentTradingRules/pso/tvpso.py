@@ -1,4 +1,4 @@
-# implement the HPSO(self-organizing hierarchical particle swarm optimizer) that  describe in the paper:
+ # implement the HPSO(self-organizing hierarchical particle swarm optimizer) that  describe in the paper:
 #	"self-Organizing Hierarchical Particle Swarm Optimizer With Time-Varying Acceleration Coefficients"
 
 # coding: utf-8
@@ -31,7 +31,7 @@ class TimeVariantParticleSwarmOp(pso.ParticleSwarmOp):
 		self.errCrit = 0.00001
 		self.popSize = 5
 		# self.iterMax = 50
-		self.stockData = utils.getStockDataTrain("0005", True)
+		# self.stockData = utils.getStockDataTrain("0005", True)
 		self.randomSize = self.iterMax*self.popSize*len(self.searchParams)
 		# print "randomSize" + str(self.randomSize)
 		self.r1 = numpy.random.uniform(size=self.randomSize)
@@ -65,11 +65,24 @@ class TimeVariantParticleSwarmOp(pso.ParticleSwarmOp):
 				tempExecParams[key].append(value[p.params[key]])
 				# print "tempExecParams: " + str(tempExecParams)
 		self.randCnt = self.randCnt + 1
-		print "\tparams:" + str(tempExecParams)					
+		# print "\tparams:" + str(tempExecParams)					
 		p.execparm = tempExecParams
 
-if __name__=="__main__":	
+
+if __name__=="__main__":
+
+	allHsiCode = ['2382', '19', '151', '1044']
+	allStrategy = ['MovingMomentum']
+	codeName = {'5': 'HSBCHoldings', '11': 'HangSengBank', '23': 'BankofEAsia', '388': 'HKEx', '939': 'CCB', '1299': 'AIA', '1398': 'ICBC', '2318': 'PingAn', '2388': 'BOCHongKong', '2628': 'ChinaLife', '3328': 'Bankcomm', '3988': 'BankofChina', '2': 'CLPHoldings', '3': 'HK&ChinaGas', '6': 'PowerAssets', '836': 'ChinaResPower', '1038': 'CKIHoldings', '12': 'HendersonLand', '16': 'SHKPpt', '17': 'NewWorldDev', '83': 'SinoLand', '101': 'HangLungPpt', '688': 'ChinaOverseas', '823': 'LinkREIT', '1109': 'ChinaResLand', '1113': 'CKAsset', '1997': 'WharfREIC', '2007': 'CountryGarden', '1': 'CKHHoldings', '19': 'SwirePacificA', '27': 'GalaxyEnt', '66': 'MTRCorporation', '144': 'ChinaMerPort', '151': 'WantWantChina', '175': 'GeelyAuto', '267': 'CITIC', '288': 'WHGroup', '386': 'SinopecCorp', '700': 'Tencent', '762': 'ChinaUnicom', '857': 'PetroChina', '883': 'CNOOC', '941': 'ChinaMobile', '992': 'LenovoGroup', '1044': 'HenganIntl', '1088': 'ChinaShenhua', '1928': 'SandsChinaLtd', '2018': 'AACTech', '2319': 'MengniuDairy', '2382': 'SunnyOptical'}
+
 	pso = TimeVariantParticleSwarmOp()
-	# pso.pso( "MovingAverage")
-	pso.pso( "MacdHistogram")
+
 	# pso.pso( "BollingerBandsStrategy")
+		
+	for strategy in allStrategy:
+		fileObject = open(strategy+'Result', 'w+')
+		for code in allHsiCode:	
+			record = pso.pso( strategy, code)
+			record = codeName.get(code) + '\t' + record
+			fileObject.write(record)
+		fileObject.close()	

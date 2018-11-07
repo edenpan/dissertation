@@ -11,8 +11,8 @@
 #			  ob: overbought threshold : [80, 75, 70]
 #			  os: oversold threshold : [20, 25, 30]
 # Suppose the close price of trading day t is pt
-# singal: buy signal :  RSI rises back above the oversold threshold
-#		  sell signal : RSI falls back below the overbought threshold.
+# singal: buy signal :  RSI rises back below the oversold threshold
+#		  sell signal : RSI falls back above the overbought threshold.
 import sys
 sys.path.append('../')
 import utils
@@ -37,9 +37,10 @@ class RelativeStrengthIndex:
 		return {'n': n, 'ob': ob, 'os': os}
 
 	def defaultParam(self):
-		n = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-		ob = [80, 75, 70]
-		os = [20, 25, 30]
+		# n = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+		n = range(10,31)
+		ob = range(70, 96)
+		os = range(10, 32)
 		parms = {'n': n, 'ob': ob, 'os': os}
 		return parms
 
@@ -70,6 +71,7 @@ class RelativeStrengthIndex:
 
 
 	def score(self, row, b, s):
+
 		if math.isnan(row['rsi']):
 			return 0.0
 		# RSI rises back above the oversold threshold; buy
@@ -90,11 +92,12 @@ class RelativeStrengthIndex:
 			aveU = pd.Series(stockData['adjclose'].rolling(i).apply(self.calcUp,raw=True).values, index = stockData['datetime'])
 			# print aveU
 			aveD = pd.Series(stockData['adjclose'].rolling(i).apply(self.calcDown,raw=True).values, index = stockData['datetime'])
+			# print aveU, aveD
 			rsi = 100 - 100/(1+(aveU.values/aveD.values))
 			stockData['rsi'] = rsi
 			for b in ob:
 				for s in os:
-					scoreRes[str(i) + '_' + str(b) + '_' + str(s)] = stockData.apply (lambda row: self.score(row, b , s),axis=1)
+					scoreRes[str(i) + '_' + str(b) + '_' + str(s)] = stockData.apply(lambda row: self.score(row, b , s),axis=1)
 					cnt = cnt + 1
 			# print stockData
 		scoreRes['datetime'] = 	stockData['datetime']

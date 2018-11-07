@@ -23,7 +23,6 @@ class Particle:
 
 class HierarchinalParticleSwarmOp(pso.ParticleSwarmOp):
 	def initParameters(self):
-		# self.iterMax = 50
 		self.popSize = 5
 		self.randSize = self.iterMax*self.popSize*self.dimensions
 		self.r1 = numpy.random.uniform(size=self.randSize)
@@ -36,7 +35,7 @@ class HierarchinalParticleSwarmOp(pso.ParticleSwarmOp):
 		self.c1 = 2
 		self.c2 = 2
 		self.randCnt = 0
-		self.stockData = utils.getStockDataTrain("0005", True)
+		# self.stockData = utils.getStockDataTrain("0005", True)
 
 	
 	def paramAdj(self, p):
@@ -66,15 +65,26 @@ class HierarchinalParticleSwarmOp(pso.ParticleSwarmOp):
 				p.params[key] = int((p.params[key] + p.v[key]) % (len(value)))
 				tempExecParams[key] = []
 				tempExecParams[key].append(value[p.params[key]])
-		print "\tparams:" + str(tempExecParams)			
+		# print "\tparams:" + str(tempExecParams)			
 
 		p.execparm = tempExecParams				
 
 
-if __name__=="__main__":	
+
+if __name__=="__main__":
+
+	allHsiCode = ['2382', '19', '151', '1044']
+	allStrategy = ['MovingMomentum']
+	codeName = {'5': 'HSBCHoldings', '11': 'HangSengBank', '23': 'BankofEAsia', '388': 'HKEx', '939': 'CCB', '1299': 'AIA', '1398': 'ICBC', '2318': 'PingAn', '2388': 'BOCHongKong', '2628': 'ChinaLife', '3328': 'Bankcomm', '3988': 'BankofChina', '2': 'CLPHoldings', '3': 'HK&ChinaGas', '6': 'PowerAssets', '836': 'ChinaResPower', '1038': 'CKIHoldings', '12': 'HendersonLand', '16': 'SHKPpt', '17': 'NewWorldDev', '83': 'SinoLand', '101': 'HangLungPpt', '688': 'ChinaOverseas', '823': 'LinkREIT', '1109': 'ChinaResLand', '1113': 'CKAsset', '1997': 'WharfREIC', '2007': 'CountryGarden', '1': 'CKHHoldings', '19': 'SwirePacificA', '27': 'GalaxyEnt', '66': 'MTRCorporation', '144': 'ChinaMerPort', '151': 'WantWantChina', '175': 'GeelyAuto', '267': 'CITIC', '288': 'WHGroup', '386': 'SinopecCorp', '700': 'Tencent', '762': 'ChinaUnicom', '857': 'PetroChina', '883': 'CNOOC', '941': 'ChinaMobile', '992': 'LenovoGroup', '1044': 'HenganIntl', '1088': 'ChinaShenhua', '1928': 'SandsChinaLtd', '2018': 'AACTech', '2319': 'MengniuDairy', '2382': 'SunnyOptical'}
+
 	pso = HierarchinalParticleSwarmOp()
-	# pso.pso( "MovingAverage")
-	# pso.pso( "MacdHistogram")
-	pso.pso( "StochasticOscillator")
 
-
+	# pso.pso( "BollingerBandsStrategy")
+		
+	for strategy in allStrategy:
+		fileObject = open(strategy+'Result', 'w+')
+		for code in allHsiCode:	
+			record = pso.pso( strategy, code)
+			record = codeName.get(code) + '\t' + record
+			fileObject.write(record)
+		fileObject.close()	

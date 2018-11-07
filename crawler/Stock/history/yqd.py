@@ -108,7 +108,7 @@ def load_yahoo_quote(ticker, begindate, enddate, info = 'quote', format_output =
 	url = 'https://query1.finance.yahoo.com/v7/finance/download/{}?{}'.format(ticker, params)
 	#print(url)
 	req = urllib.request.Request(url, headers=_headers)
-
+	print("req rest:" + str(req))
 	# Perform the query
 	# There is no need to enter the cookie here, as it is automatically handled by opener
 	f = urllib.request.urlopen(req)
@@ -152,14 +152,17 @@ def test():
 	sys.path.append('/Users/shiqipan/code/dissertation/')
 	from crawler.Util import sqlUtil 
 	index = sqlUtil.getSymbolList()
-	tableList = [['5' ,'hsbc_holdings'],['11' ,'hang_seng_bank'],['23' ,'bank_of_e_asia'],['388' ,'hkex'],['939' ,'ccb'],['1299' ,'aia'],['1398' ,'icbc'],['2318' ,'ping_an'],['2388' ,'boc_hong_kong'],['2628' ,'china_life'],['3328' ,'bankcomm'],['3988' ,'bank_of_china'],['2' ,'clp_holdings'],['3' ,'hk_china_gas'],['6' ,'power_assets'],['836' ,'china_res_power'],['1038' ,'cki_holdings'],['83' ,'sino_land']]
+	# tableList = [['5' ,'hsbc_holdings'],['11' ,'hang_seng_bank'],['23' ,'bank_of_e_asia'],['388' ,'hkex'],['939' ,'ccb'],['1299' ,'aia'],['1398' ,'icbc'],['2318' ,'ping_an'],['2388' ,'boc_hong_kong'],['2628' ,'china_life'],['3328' ,'bankcomm'],['3988' ,'bank_of_china'],['2' ,'clp_holdings'],['3' ,'hk_china_gas'],['6' ,'power_assets'],['836' ,'china_res_power'],['1038' ,'cki_holdings'],['83' ,'sino_land']]
+	# tableList = [['5' ,'hsbc_holdings']]
+	tableList = [['%5EHS' ,'hsi_index']]
 
 	for table in tableList:
 		symbolCode = str(table[0]).zfill(4) + '.HK'
 		tableName = table[1]
 		print('===', tableName, '===')
-		history = load_yahoo_quote(symbolCode, '20070701', '20180729', format_output = 'dataframe')
-		sqlUtil.insertPd(tableName, history)
+		# history = load_yahoo_quote(symbolCode, '20070701', '20180729', format_output = 'dataframe')
+		history = load_yahoo_quote(symbolCode, '20170701', '20180729', format_output = 'dataframe')
+		# sqlUtil.insertPd(tableName, history)
 		sleep(1)
 
 if __name__=="__main__":
