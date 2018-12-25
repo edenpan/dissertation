@@ -24,7 +24,7 @@ import math
 class RelativeStrengthIndex:
 
 	def __init__(self):
-		self.strategyName = "RelativeStrengthIndexStrategy"
+		self.strategyName = "RelativeStrengthIndex"
 
 	def parseparams(self, para):
 		n = []
@@ -38,6 +38,9 @@ class RelativeStrengthIndex:
 
 	def defaultParam(self):
 		# n = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+		# n = range(10,31)
+		# ob = range(70, 96)
+		# os = range(10, 32)
 		n = range(10,31)
 		ob = range(70, 96)
 		os = range(10, 32)
@@ -78,7 +81,7 @@ class RelativeStrengthIndex:
 		if row['rsi'] > s:
 			return 1.0
 		# RSI falls back below the overbought threshold; sell
-		if row['adjclose'] < b:
+		if row['rsi'] < b:
 			return -1.0
 		return 0.0
 
@@ -95,6 +98,8 @@ class RelativeStrengthIndex:
 			# print aveU, aveD
 			rsi = 100 - 100/(1+(aveU.values/aveD.values))
 			stockData['rsi'] = rsi
+			# print i
+			
 			for b in ob:
 				for s in os:
 					scoreRes[str(i) + '_' + str(b) + '_' + str(s)] = stockData.apply(lambda row: self.score(row, b , s),axis=1)

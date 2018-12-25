@@ -16,7 +16,7 @@ import math
 
 class MovingAverage:
 	def __init__(self):
-		self.strategyName = "MovingAverageStrategy"
+		self.strategyName = "MovingAverage"
 
 	#use to parse the result that return by the backtest run. "ns_nl" pattern
 	def parseparams(self, para):
@@ -32,7 +32,6 @@ class MovingAverage:
 		ns_small = range(1, 10, 1)
 		ns_big = range(10, 200, 5)
 		ns = ns_small + ns_big
-		
 		parms = {'nl': nl, 'ns': ns}
 		return parms
 
@@ -50,7 +49,6 @@ class MovingAverage:
 			return False
 		nl = kwargs.get('nl')
 		ns = kwargs.get('ns')
-
 		if nl[0] <= ns[0]:
 			return False
 		else:
@@ -68,9 +66,8 @@ class MovingAverage:
 						continue
 					result = self.calculate(stockData, l, s)
 					cnt = cnt + 1
-					scoreRes[str(s) + '_' + str(l)] = result.apply (lambda row: self.score(row),axis=1)
-		# print "total Strategy: " + str(cnt)		
-		# print scoreRes
+					scoreRes[str(s) + '_' + str(l)] = \
+					result.apply (lambda row: self.score(row),axis=1)
 		return scoreRes, cnt	
 
 	#return the smal, smas, buy and sell so that it can be used in other algorithm	

@@ -26,7 +26,7 @@ class tradingRangeBreakout:
 		return {'n': n}
 
 	def defaultParam(self):
-		n = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250]
+		n = range(10,255)
 		parms = {'n': n}
 		return parms
 

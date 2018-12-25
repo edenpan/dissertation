@@ -17,7 +17,7 @@ import math
 
 class OnBalanceVolAve:
 	def __init__(self):
-		self.strategyName = "MovingAverageStrategy"
+		self.strategyName = "OnBalanceVolAve"
 
 	#use to parse the result that return by the backtest run. "ns_nl" pattern
 	def parseparams(self, para):
@@ -29,8 +29,8 @@ class OnBalanceVolAve:
 		return {'nl': n, 'ns': k}
 
 	def defaultParam(self):
-		nl=[5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200, 250]
-		ns= [1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 175, 200]
+		nl=range(5,250,5)
+		ns= range(1,10)+range(15,200,5)
 		parms = {'nl': nl, 'ns': ns}
 		return parms
 	

@@ -84,12 +84,12 @@ class ParticleSwarmOp:
 		
 
 	# This a common part that used to process as procedure of PSO.
-	def pso(self, strategyName, code):
+	def pso(self, strategyName, code, stratDate, endDate):
 
 		self.setStrategy(strategyName)
 		self.iterMax = 50
 		print 'max Iterate: ' + str(self.iterMax)
-		self.stockData = utils.getStockDataTrain(code, True)
+		self.stockData = utils.getStockDataWithTime(code, stratDate, endDate)
 		self.initParameters()
 		self.initParticles()
 		# let the first particle be the global best
@@ -216,8 +216,27 @@ class ParticleSwarmOp:
 					print 'will stop ' + str(keepCnt )
 					stop = True				
 
+def runSTO():
+	
+	allHsiCode = ['2018']	
+	allStrategy = ['StochasticOscillator']
+	# allStrategy = ['MovingAverage', 'OnBalanceVolAve', 'RelativeStrengthIndex', 'tradingRangeBreakout','MacdHistogram','BollingerBandsStrategy']
+	codeName = {'5': 'HSBCHoldings', '11': 'HangSengBank', '23': 'BankofEAsia', '388': 'HKEx', '939': 'CCB', '1299': 'AIA', '1398': 'ICBC', '2318': 'PingAn', '2388': 'BOCHongKong', '2628': 'ChinaLife', '3328': 'Bankcomm', '3988': 'BankofChina', '2': 'CLPHoldings', '3': 'HK&ChinaGas', '6': 'PowerAssets', '836': 'ChinaResPower', '1038': 'CKIHoldings', '12': 'HendersonLand', '16': 'SHKPpt', '17': 'NewWorldDev', '83': 'SinoLand', '101': 'HangLungPpt', '688': 'ChinaOverseas', '823': 'LinkREIT', '1109': 'ChinaResLand', '1113': 'CKAsset', '1997': 'WharfREIC', '2007': 'CountryGarden', '1': 'CKHHoldings', '19': 'SwirePacificA', '27': 'GalaxyEnt', '66': 'MTRCorporation', '144': 'ChinaMerPort', '151': 'WantWantChina', '175': 'GeelyAuto', '267': 'CITIC', '288': 'WHGroup', '386': 'SinopecCorp', '700': 'Tencent', '762': 'ChinaUnicom', '857': 'PetroChina', '883': 'CNOOC', '941': 'ChinaMobile', '992': 'LenovoGroup', '1044': 'HenganIntl', '1088': 'ChinaShenhua', '1928': 'SandsChinaLtd', '2018': 'AACTech', '2319': 'MengniuDairy', '2382': 'SunnyOptical'}
+	pso = ParticleSwarmOp()
+	for strategy in allStrategy:
+		import time
+		start = time.time()
+		for code in allHsiCode:	
+			record = pso.pso(strategy, code, '2013-07-13', '2016-12-12')
+			record = codeName.get(code) + '\t' + str(record)
+			print record
+		end = time.time()
+		escape = end - start
+		print strategy,escape
 
-if __name__=="__main__":
+def testAll():
+	import time
+	start = time.time()
 	# stockDataTrain = utils.getStockDataTrain("0005", True)
 	allHsiCode = ['5', '11', '23', '388', '939', '1299', '1398', '2318', '2388', '2628', '3328', '3988', \
 	'2', '3', '6', '836', '1038', '12', '16', '17', '83', '101', '688', '823', '1109', '1113',  '2007', \
@@ -225,24 +244,34 @@ if __name__=="__main__":
 	'1044', '1088', '1928', '2018', '2319', '2382']
 
 	# allHsiCode = ['2382', '19', '151', '1044']
-	# allStrategy = ['MovingAverage', 'BollingerBandsStrategy', 'MacdHistogram', 'RelativeStrengthIndex', 'OnBalanceVolAve', 'tradingRangeBreakout','StochasticOscillator']
-	allStrategy = ['MacdHistogram']
+	allStrategy = ['MovingAverage', 'BollingerBandsStrategy', 'MacdHistogram', 'RelativeStrengthIndex', 'OnBalanceVolAve', 'tradingRangeBreakout','StochasticOscillator']
+
+	# allStrategy = ['StochasticOscillator']
 	# codeName = {'2382': 'SunnyOptical'}
 	codeName = {'5': 'HSBCHoldings', '11': 'HangSengBank', '23': 'BankofEAsia', '388': 'HKEx', '939': 'CCB', '1299': 'AIA', '1398': 'ICBC', '2318': 'PingAn', '2388': 'BOCHongKong', '2628': 'ChinaLife', '3328': 'Bankcomm', '3988': 'BankofChina', '2': 'CLPHoldings', '3': 'HK&ChinaGas', '6': 'PowerAssets', '836': 'ChinaResPower', '1038': 'CKIHoldings', '12': 'HendersonLand', '16': 'SHKPpt', '17': 'NewWorldDev', '83': 'SinoLand', '101': 'HangLungPpt', '688': 'ChinaOverseas', '823': 'LinkREIT', '1109': 'ChinaResLand', '1113': 'CKAsset', '1997': 'WharfREIC', '2007': 'CountryGarden', '1': 'CKHHoldings', '19': 'SwirePacificA', '27': 'GalaxyEnt', '66': 'MTRCorporation', '144': 'ChinaMerPort', '151': 'WantWantChina', '175': 'GeelyAuto', '267': 'CITIC', '288': 'WHGroup', '386': 'SinopecCorp', '700': 'Tencent', '762': 'ChinaUnicom', '857': 'PetroChina', '883': 'CNOOC', '941': 'ChinaMobile', '992': 'LenovoGroup', '1044': 'HenganIntl', '1088': 'ChinaShenhua', '1928': 'SandsChinaLtd', '2018': 'AACTech', '2319': 'MengniuDairy', '2382': 'SunnyOptical'}
 	# allStrategy = ['MovingAverage','BollingerBandsStrategy']
 	# allHsiCode = ['5', '11', '23', '388']
+
 	pso = ParticleSwarmOp()
 
 	# pso.pso( "BollingerBandsStrategy")
-		
+	fileObject = open('PsoResult2', 'w+')	
 	for strategy in allStrategy:
-		fileObject = open(strategy+'Result', 'w+')
 		for code in allHsiCode:	
-			record = pso.pso( strategy, code)
+			# record = pso.pso(strategy, code, '2015-07-15', '2017-07-15')
+			# bf.setStockDataTime(code, '2013-07-13', '2016-12-12')
+			record = pso.pso(strategy, code, '2013-07-13', '2016-12-12')
 			record = codeName.get(code) + '\t' + str(record)
 			fileObject.write(record)
-		fileObject.close()
+	
+	fileObject.close()
+	end = time.time()
+	escape = end - start
+	print escape			
 
+if __name__=="__main__":
+	# testAll()
+	runSTO()
 	# pso.pso( "MacdHistogram")
 	# pso.pso( "MovingMomentum", '5')
 	# pso.pso( "RelativeStrengthIndex")

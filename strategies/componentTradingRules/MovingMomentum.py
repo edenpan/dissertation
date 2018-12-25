@@ -69,10 +69,10 @@ class MovingMomentum:
 		htime = range(8, 15, 1)
 		snl = range(15, 255, 5)
 		sns = range(1, 10, 1) + range(10, 200, 5)
-		sto_n = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-		sto_m = [3, 7, 11]
-		sto_ob = [80, 75, 70]
-		sto_os = [20, 25, 30]
+		sto_n = range(11,21)
+		sto_m = range(3,12)
+		sto_ob = range(70, 96)
+		sto_os = range(10, 32)
 		parms = {'hns': hns, 'hnl': hnl, 'htime': htime, 'snl': snl, 'sns': sns, 'sto_n': sto_n, 'sto_m':sto_m, 'sto_ob': sto_ob, 'sto_os': sto_os}
 		return parms
 

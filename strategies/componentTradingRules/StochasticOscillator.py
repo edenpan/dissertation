@@ -44,17 +44,24 @@ class StochasticOscillator:
 		return {'n': n, 'ob': ob, 'os': os, 'm': m}
 
 	def defaultParam(self):
-		n = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-		m = [3, 7, 11]
-		ob = [80, 75, 70]
-		os = [20, 25, 30]
+		n = range(5,15)+range(15,200,5)
+		m = range(3,12)
+		ob = range(70, 96)
+		os = range(10, 32)
+		# n = [3]
+		# m = [3]
+		# ob = [70]
+		# os = [10]
 		parms = {'n': n, 'ob': ob, 'os': os, 'm': m}
 		return parms
 
 	def checkParams(self, **kwargs):
 		if 0 == len(kwargs):
 			return False
-			
+		n = kwargs.get('n')
+		m = kwargs.get('m')
+		if m > n:
+			return False	
 		return True
 
 
@@ -84,10 +91,15 @@ class StochasticOscillator:
 					for s in os:
 						scoreRes[str(t) + '_' + str(k) + '_' + str(b) + '_' + str(s)] = stockData.apply (lambda row: self.score(row, b , s),axis=1)
 						cnt = cnt + 1
-		# print stockData	
+				# if (cnt%100 == 0):
+				import time
+				start = time.time()
+				# print start
+				# print 'cnt' + str(cnt) 
 		scoreRes['datetime'] = 	stockData['datetime']
 		scoreRes = scoreRes.set_index('datetime')				
-		# print "total Strategy: " + str(cnt)		
+		# print "total Strategy: " + str(cnt)	
+		scoreRes.to_csv('run.csv', sep='\t', encoding='utf-8')	
 		return scoreRes, cnt	
 
 if __name__=="__main__":

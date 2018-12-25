@@ -16,11 +16,10 @@ import pandas as pd
 def filtZero(df, key, value):
 	return df[df[key] != value]
 
-def runbackTest(stockData, strategy, oriCap = 10000.00, allRate = False, **kwargs):
+def runbackTest(stockData, result, oriCap = 10000.00, allRate = False, **kwargs):
 	pd.DataFrame.mask = filtZero
 	# running the strategy with the parameter it given
-	result, n = strategy.run(stockData, **kwargs)
-	
+	n = len(result.columns)
 	# print "total running counts: " + str(n)
 	bestRoi = -99999.99
 	bestParam = ""
@@ -55,38 +54,21 @@ def runbackTest(stockData, strategy, oriCap = 10000.00, allRate = False, **kwarg
 		if bestRoi < roi:
 			bestParam = result.columns[i]
 			bestRoi = roi
-		# if(i % 500 == 0):
-		# 	print "i" + str(i)
+		if(i % 500 == 0):
+			print "i" + str(i)
 			
-		strategyResList.append({strategy.strategyName +"-" + str(result.columns[i]) : (roi, execList)})
+		strategyResList.append({"StochasticOscillatorStrategy" +"-" + str(result.columns[i]) : (roi, execList)})
 		i = i + 1
 	# print "runtimes: " + str(i)	
 	#if allRate = True, then there is only 1 result use to get the SharpeRatio.	
 	# calculate buy-and-hold roi
 	buyAndHold = (stockData.iloc[-1].adjclose - stockData.iloc[0].adjclose)/stockData.iloc[0].adjclose
 	bestRes = (bestParam, bestRoi, buyAndHold)
-	# bestRes = (bestParam, bestRoi)
 	return strategyResList, bestRes
 
 
 
 if __name__=="__main__":
-	module = importlib.import_module("BollingerBandsStrategy")
-	class_ = getattr(module, "BollingerBandsStrategy")
-	strategy = class_()
-
-	params = strategy.defaultParam()
-	print params
-	# params['stockData'] = stockData
-	isTrain = True
-	stockDataTrain = utils.getStockDataTrain("0005", isTrain)
-	bStratRes, bBstRes = runbackTest(stockDataTrain, strategy, **params )
-	print bStratRes, bBstRes
-	bParam = strategy.parseparams(bBstRes[0])
-	print bParam
-	stockDataTest = utils.getStockDataTrain("0005", not isTrain)
-	print runbackTest(stockDataTest, strategy, **bParam)
-	# runbackTest('0005', "BollingerBands", False, **params)
-
-
+	result = pd.read_csv('run.csv', sep='\t', encoding='utf-8')	
+	runbackTest(stockData, result, oriCap = 10000.00, allRate = False, **kwargs)
 
