@@ -27,7 +27,7 @@ def get_config():
 @app.route('/search')
 def get_searchList():
     symbolList = SymbolListInfo()
-    return setJsonRes(symbolList.getSymbollistStr())
+    return setJsonRes(symbolList.getSymbollist())
 
 @app.route('/symbols')
 def get_symbols():

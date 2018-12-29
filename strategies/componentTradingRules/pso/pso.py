@@ -217,7 +217,6 @@ class ParticleSwarmOp:
 					stop = True				
 
 def runSTO():
-	
 	allHsiCode = ['2018']	
 	allStrategy = ['StochasticOscillator']
 	# allStrategy = ['MovingAverage', 'OnBalanceVolAve', 'RelativeStrengthIndex', 'tradingRangeBreakout','MacdHistogram','BollingerBandsStrategy']
@@ -271,7 +270,15 @@ def testAll():
 
 if __name__=="__main__":
 	# testAll()
-	runSTO()
+	# runSTO()
+	if(len(sys.argv) <= 2):
+		print("enter startegy name,stock code")
+	
+	else:
+		pso = ParticleSwarmOp();
+		pso.pso(sys.argv[1], sys.argv[2],'2013-07-13', '2016-12-12')
+	
+	
 	# pso.pso( "MacdHistogram")
 	# pso.pso( "MovingMomentum", '5')
 	# pso.pso( "RelativeStrengthIndex")
