@@ -16,4 +16,6 @@
         checkParams(self, **kwargs) being used to check if the parameter valid.
         defaultParam(self) the default parameter that can be used to run the strategy.
 
-
+## Task List
+1. [] Change to use standard log output
+2. [] Adding more datasource, eg. Foreign Currency.
