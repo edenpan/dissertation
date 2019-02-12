@@ -6,10 +6,9 @@
 # Input: Currend Day:d, Rule Weights: wt  --- list of component rule 
 # Output: Updated Rule Weights: wt
 # 
-import bb
 import sys
 sys.path.append('../')
-import utils
+# import utils
 import pandas as pd
 
 startDate = '20130701'

@@ -2,11 +2,16 @@
 # autor: Eden
 # date: 2018-07-31
 # utils.py : use to implement sever basic function, get historical data from database, plot history data and plot the strategy's P&L.
-
+# add log config
 import psycopg2
 import pandas as pd
 from sqlalchemy import create_engine
 import datetime
+import logging
+
+logging.basicConfig(format='%(asctime)s-%(levelname)s- %(message)s', level=logging.INFO)
+
+
 
 symbolList = {}
 conn = psycopg2.connect("dbname='stockdb' user='runner' password='tester'")
