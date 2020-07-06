@@ -142,7 +142,7 @@ def testDB():
 		symbolCode = str(code[0]).zfill(4) + '.HK'
 		tableName = code[1]
 		print('===', tableName, '===')
-		history = load_yahoo_quote(symbolCode, '20130701', '20180712', format_output = 'dataframe')
+		history = load_yahoo_quote(symbolCode, '20180712', '20190327', format_output = 'dataframe')
 		sqlUtil.insertPd(tableName, history)
 		sleep(1)
 

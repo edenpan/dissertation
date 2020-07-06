@@ -13,6 +13,9 @@ import utils
 from datetime import timedelta  
 import pandas as pd
 
+import logging
+log = logging.getLogger(__name__)
+
 def filtZero(df, key, value):
 	return df[df[key] != value]
 
@@ -60,7 +63,7 @@ def runbackTest(stockData, strategy, oriCap = 10000.00, allRate = False, **kwarg
 			
 		strategyResList.append({strategy.strategyName +"-" + str(result.columns[i]) : (roi, execList)})
 		i = i + 1
-	# print "runtimes: " + str(i)	
+	# log.debug( "runtimes: " + str(i))
 	#if allRate = True, then there is only 1 result use to get the SharpeRatio.	
 	# calculate buy-and-hold roi
 	buyAndHold = (stockData.iloc[-1].adjclose - stockData.iloc[0].adjclose)/stockData.iloc[0].adjclose
@@ -76,6 +79,7 @@ if __name__=="__main__":
 	strategy = class_()
 
 	params = strategy.defaultParam()
+
 	print(params)
 	# params['stockData'] = stockData
 	isTrain = True

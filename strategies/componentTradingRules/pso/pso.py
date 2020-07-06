@@ -10,6 +10,9 @@ import utils
 import copy
 import importlib
 
+import logging
+log = logging.getLogger(__name__)
+
 
 # The base class of 
 # Including stopping condition (cause this part is related with pso iterate can not write separetely.)
@@ -88,7 +91,8 @@ class ParticleSwarmOp:
 
 		self.setStrategy(strategyName)
 		self.iterMax = 50
-		print('max Iterate: ' + str(self.iterMax))
+		log.info('max Iterate: ' + str(self.iterMax))
+
 		self.stockData = utils.getStockDataWithTime(code, stratDate, endDate)
 		self.initParameters()
 		self.initParticles()
@@ -101,20 +105,20 @@ class ParticleSwarmOp:
 		self.stopWithMaxIterCnt()
 		# print "self.iterMax: " + str(self.iterMax)
 		# self.stopConImpBest(self.iterMax/2)
-		print("find one%s,%s", self.gbest.execparm, self.gbest.params)				
-		print('\nParticle Swarm Optimisation\n')
-		print('PARAMETERS\n','-'*9)
-		print('Population size : ', self.popSize)
-		print('Dimensions	  : ', self.dimensions)
-		print('ParticleSwarmOp Name :', self.psoName)
-		print('stop Condition :', self.stopCondition)
-		print('strategyName:', strategyName)
-		print('stockCode:', code)
-		print('RESULTS\n', '-'*7)
-		print('ROI   : ', self.gbest.fitness)
-		print('gbest params	: ', self.gbest.params)
-		print('gbest execparm	: ', self.gbest.execparm)
-		print('iterations	  : ', self.iterCnt)
+		log.info("find one%s,%s", self.gbest.execparm, self.gbest.params)				
+		log.info('\nParticle Swarm Optimisation\n')
+		log.info('PARAMETERS\n' + '-'*9)
+		log.info('Population size : %s', self.popSize)
+		log.info('Dimensions	  : %s', self.dimensions)
+		log.info('ParticleSwarmOp Name :%s', self.psoName)
+		log.info('stop Condition :%s', self.stopCondition)
+		log.info('strategyName: %s', strategyName)
+		log.info('stockCode: %s', code)
+		log.info('RESULTS\n' + '-'*7)
+		log.info('ROI   : %s', self.gbest.fitness)
+		log.info('gbest params	: %s', self.gbest.params)
+		log.info('gbest execparm	: %s', self.gbest.execparm)
+		log.info('iterations	  : %s', self.iterCnt)
 		# record = 'strategyName:\t' + str(self.strategyName) + '\tcode:\t' + str(code) + '\texecparm:\t' \
 		# + str(self.gbest.execparm) + '\tROI:\t' + str(self.gbest.fitness)
 		record = str(self.strategyName) + '\t' + str(code) + '\t' \
@@ -128,9 +132,9 @@ class ParticleSwarmOp:
 				#base on the function: V(t+1) = w*V(t) + C1*r1*(pbest - p[t]) + C2*r2*(gbest - p[t])
 				p.v[key] = int(self.w * p.v[key] + self.c1 * random.random() * (p.best.params[key] - p.params[key]) + \
 					self.c2 * random.random() * (self.gbest.params[key] - p.params[key]))
-				# print "key:" + str(key) + "\tv: " + str(p.v) + "\t param:" + str(p.params)
+				log.debug("key:" + str(key) + "\tv: " + str(p.v) + "\t param:" + str(p.params)) 
 				p.params[key] = (p.params[key] + p.v[key]) % (len(value))
-				# print "key" + str(key) + "\tparams:" + str(p.params)	
+
 				tempExecParams[key] = []
 				tempExecParams[key].append(value[p.params[key]])
 		p.execparm = tempExecParams
@@ -142,7 +146,6 @@ class ParticleSwarmOp:
 			self.iterCnt += 1
 			for p in self.particles:
 				_, bestfitness = runbackTest(self.stockData, self.strategy, **p.execparm)
-				# print bestfitness
 				fitness = bestfitness[1]
 				
 				if fitness > p.fitness:
@@ -151,7 +154,7 @@ class ParticleSwarmOp:
 					p.best = p
 					#update the global best record.
 				if fitness > self.gbest.fitness:
-					print('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.')
+					log.info('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.')
 					self.gbest = copy.deepcopy(p)
 				self.paramAdj(p)		
 
@@ -175,14 +178,15 @@ class ParticleSwarmOp:
 					#update the global best record.
 				if fitness > self.gbest.fitness:
 					self.gbest = copy.deepcopy(p)
-					print('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.')
+					log.info('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.') 
+
 
 				if self.iterCnt > self.iterMax/4:
 					if abs(fitness - self.gbest.fitness) > dist:
 						dist = abs(fitness - self.gbest.fitness)
-						# print "dist:" + str(dist) + "result from: " + str(fitness) + str(self.gbest.fitness)
-						# print "execparm:" + str(p.execparm)
-						# print "gbestexecparm: " + str(self.gbest.execparm)
+						# log.debug( "dist:" + str(dist) + "result from: " + str(fitness) + str(self.gbest.fitness))
+						# log.debug("execparm:" + str(p.execparm))
+						# log.debug("gbestexecparm: " + str(self.gbest.execparm))
 					if dist > self.distThreshold:
 						stop = True
 				self.paramAdj(p)								
@@ -206,14 +210,14 @@ class ParticleSwarmOp:
 					p.best = p
 					#update the global best record.
 				if fitness > self.gbest.fitness:
-					print('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.')
+					log.info('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.')
 					# print("original one%s,%s", self.gbest.execparm, self.gbest.params)
 					self.gbest = copy.deepcopy(p)
 					keepCnt = 0
 				self.paramAdj(p)
 
 			if keepCnt > self.stopThreshold:
-					print('will stop ' + str(keepCnt ))
+					log.info('will stop ' + str(keepCnt ))
 					stop = True				
 
 def runSTO():
@@ -266,21 +270,21 @@ def testAll():
 	fileObject.close()
 	end = time.time()
 	escape = end - start
-	print(escape)
+	log.info(escape)
 
 if __name__=="__main__":
 	# testAll()
 	# runSTO()
-	if(len(sys.argv) <= 2):
-		print("enter startegy name,stock code")
+	# if(len(sys.argv) <= 2):
+	# 	log.error("enter startegy name,stock code")
 	
-	else:
-		pso = ParticleSwarmOp();
-		pso.pso(sys.argv[1], sys.argv[2],'2013-07-13', '2016-12-12')
+	# else:
+	# 	pso = ParticleSwarmOp();
+	# 	pso.pso(sys.argv[1], sys.argv[2],'2013-07-13', '2016-12-12')
 	
-	
+	pso = ParticleSwarmOp()
 	# pso.pso( "MacdHistogram")
-	# pso.pso( "MovingMomentum", '5')
+	pso.pso( "MovingMomentum", '5','2013-07-13', '2016-12-12')
 	# pso.pso( "RelativeStrengthIndex")
 	# pso.pso( "MovingAverage")
 	# pso.pso( "MovingAveConvergeDiver")

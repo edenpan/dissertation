@@ -9,7 +9,8 @@ import psycopg2
 import psycopg2.extras
 import pandas as pd
 from sqlalchemy import create_engine
-import calendar
+import calendar；
+
 symbolList = []
 conn = psycopg2.connect("dbname='stockdb' user='runner' password='tester'")
 engine = create_engine('postgresql://runner:tester@localhost/stockdb', echo=False) 
