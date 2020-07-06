@@ -82,10 +82,10 @@ def getStockDataWithTimeFromCSV(code, startTime, endTime):
 	code = code.zfill(4)+".HK.csv"
 	path = "/home/edenpan/code/python/myInterest/financial/hkStockData/" + code
 	stockData = pd.read_csv(path, infer_datetime_format=True, header=0,
-							names=['date', 'open', 'high', 'low', 'close', 'adjclose', 'volume'])
+							names=['datetime', 'open', 'high', 'low', 'close', 'adjclose', 'volume'])
 	print(stockData)
-	startData = stockData[stockData['date'] >= startTime]
-	stockData = startData[startData['date'] <= endTime]
+	startData = stockData[stockData['datetime'] >= startTime]
+	stockData = startData[startData['datetime'] <= endTime]
 	print(stockData)
 	return stockData
 

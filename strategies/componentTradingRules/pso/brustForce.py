@@ -41,17 +41,17 @@ def brustForceOne():
 	strategyList = ['MovingAverage', 'OnBalanceVolAve', 'RelativeStrengthIndex', 'MacdHistogram' ,'tradingRangeBreakout','BollingerBandsStrategy']
 	# strategyList = ['tradingRangeBreakout','BollingerBandsStrategy']
 	for strategyName in strategyList:
-		print strategyName
+		print(strategyName)
 		import time
 		start = time.time()
-		print start
+		print(start)
 		bf.setStrategy(strategyName)
 		bStratRes, bBstRes = bf.run()
 		# print bStratRes
-		print bBstRes
+		print(bBstRes)
 		end = time.time()
 		escape = end - start
-		print escape
+		print(escape)
 
 
 def ususallSeen():
@@ -120,14 +120,14 @@ def randomPickParameter():
 		class_ = getattr(module, strategy)
 		strategyClass = class_()
 		paramerList = strategyClass.defaultParam()
-		for code in codeName.keys():
+		for code in list(codeName.keys()):
 			bestParameter = {}
 			bestRoi = -99999
 			bf.setStockDataTime(code, '2013-07-13', '2016-12-12')
-			print code
+			print(code)
 			for i in range(280):
 				param = {}
-				for key in paramerList.keys():
+				for key in list(paramerList.keys()):
 					param[key] = [paramerList[key][random.randint(0,len(paramerList[key])-1)]]
 				bf.setStrategy(strategy, param)
 				bStratRes, bBstRes = bf.run()
@@ -136,7 +136,7 @@ def randomPickParameter():
 					bestParameter = param
 
 			record = str(codeName[code]) + '\t' + str(strategy) + '\t' + str(bestParameter) + '\t'+ str(bestRoi)+ '\n'
-			print record
+			print(record)
 			fileObject.write(record)
 	fileObject.close()	
 
@@ -150,30 +150,30 @@ def simpleRandomParameter():
 	for strategy in allStrategy:
 		import time
 		start = time.time()
-		print start
-		print strategy
+		print(start)
+		print(strategy)
 		module = importlib.import_module(strategy)
 		class_ = getattr(module, strategy)
 		strategyClass = class_()
 		paramerList = strategyClass.defaultParam()
 		
-		for code in codeName.keys():
+		for code in list(codeName.keys()):
 			bestParameter = {}
 			bestRoi = -99999
 			bf.setStockDataTime(code, '2013-07-13', '2016-12-12')
 			
 			for i in range(2800000):
 				param = {}
-				for key in paramerList.keys():
+				for key in list(paramerList.keys()):
 					param[key] = []
-				for key in paramerList.keys():
+				for key in list(paramerList.keys()):
 					param[key].append(paramerList[key][random.randint(0,len(paramerList[key])-1)])
 			bf.setStrategy(strategy, param)
 			bStratRes, bBstRes = bf.run()
-		print bBstRes
+		print(bBstRes)
 		end = time.time()
 		escape = end - start
-		print escape
+		print(escape)
 
 
 

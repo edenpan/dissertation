@@ -77,9 +77,9 @@ def smaCross(intervelList):
 		capNum = StockNum*((stockData.tail(1).high.values[0] + stockData.tail(1).low.values[0])/2)
 	# print "final capital: " + str(capNum)
 	roi = (capNum-10000.0)/10000.0
-	print(("roi: " + str(roi)))	
-	print((stockData.head()))
-	print((plotdata.head()))
+	print("roi: " + str(roi))	
+	print(stockData.head())
+	print(plotdata.head())
 	plotPrice2(stockData, plotdata)
 	return roi
 

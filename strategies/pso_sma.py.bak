@@ -53,7 +53,7 @@ def psosma():
 				p.best = p.params
 				#update the global best record.
 			if fitness > gbest.fitness:
-				print("fitness global:" + str(p.fitness))
+				print "fitness global:" + str(p.fitness)
 				gbest = p
 			# print "p.v" + str(p.v)
 			#update vola
@@ -67,22 +67,22 @@ def psosma():
 			p.parmas = p.params + v
 		i += 1
 		if i % (iterMax/10) == 0:
-			print('.')
+			print '.'
 			
-	print('\nParticle Swarm Optimisation\n')
-	print('PARAMETERS\n','-'*9)
-	print('Population size : ', popSize)
-	print('Dimensions	  : ', dimensions)
-	print('Error Criterion : ', errCrit)
-	print('c1			  : ', c1)
-	print('c2			  : ', c2)
-	print('function		:  f6')
+	print '\nParticle Swarm Optimisation\n'
+	print 'PARAMETERS\n','-'*9
+	print 'Population size : ', popSize
+	print 'Dimensions	  : ', dimensions
+	print 'Error Criterion : ', errCrit
+	print 'c1			  : ', c1
+	print 'c2			  : ', c2
+	print 'function		:  f6'
 
-	print('RESULTS\n', '-'*7)
-	print('gbest fitness   : ', gbest.fitness)
-	print('gbest params	: ', gbest.params)
-	print('gbest params	: ', gbest.params)
+	print 'RESULTS\n', '-'*7
+	print 'gbest fitness   : ', gbest.fitness
+	print 'gbest params	: ', gbest.params
+	print 'gbest params	: ', gbest.params
 
-	print('iterations	  : ', i+1)
+	print 'iterations	  : ', i+1
 		
 psosma()

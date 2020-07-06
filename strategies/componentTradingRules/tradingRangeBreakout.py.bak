@@ -26,7 +26,7 @@ class tradingRangeBreakout:
 		return {'n': n}
 
 	def defaultParam(self):
-		n = list(range(10,255))
+		n = range(10,255)
 		parms = {'n': n}
 		return parms
 
@@ -72,6 +72,6 @@ if __name__=="__main__":
 	stockDataTrain = utils.getStockDataTrain("0005", True)
 	trb = tradingRangeBreakout()
 	params = trb.defaultParam()
-	print(trb.run(stockDataTrain, **params))
+	print trb.run(stockDataTrain, **params)
 
 	
