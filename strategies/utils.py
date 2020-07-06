@@ -10,7 +10,7 @@ import datetime
 
 symbolList = {}
 # conn = psycopg2.connect("dbname='stockdb' user='runner' password='tester'")
-conn
+conn =""
 def getSymbolList():
 	global symbolList, conn
 	if len(symbolList) == 0:

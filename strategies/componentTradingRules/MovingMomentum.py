@@ -68,7 +68,7 @@ class MovingMomentum:
 		hnl = range(24, 40, 2) 
 		htime = range(8, 15, 1)
 		snl = range(15, 255, 5)
-		sns = range(1, 10, 1) + range(10, 200, 5)
+		sns = list(range(1, 10, 1))+ list(range(10, 200, 5))
 		sto_n = range(11,21)
 		sto_m = range(3,12)
 		sto_ob = range(70, 96)
