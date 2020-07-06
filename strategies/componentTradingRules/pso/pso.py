@@ -93,7 +93,8 @@ class ParticleSwarmOp:
 		self.iterMax = 50
 		log.info('max Iterate: ' + str(self.iterMax))
 
-		self.stockData = utils.getStockDataWithTime(code, stratDate, endDate)
+		# self.stockData = utils.getStockDataWithTime(code, stratDate, endDate)
+		self.stockData = utils.getStockDataWithTimeFromCSV(code, stratDate, endDate)
 		self.initParameters()
 		self.initParticles()
 		# let the first particle be the global best
