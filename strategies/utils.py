@@ -73,26 +73,20 @@ extract(epoch from (date(datetime)- interval \'1 hour\')) < {2}"
 		stockData = pd.read_sql_query(querySql,con=engine)			
 		return stockData
 
-def getStockDataWithTimeFromCSV(code, startTime, endTime):
-	code = code.lstrip("0")
-	symbolList = getSymbolList()
-	stockData = pd.DataFrame()
-	start = transferDate(startTime)
-	end = transferDate(endTime)
-	if(None != symbolList.get(code)):
-		tableName = symbolList.get(code)
-		engine = create_engine('postgresql://runner:tester@localhost/stockdb', echo=False)
-		#get data from 2013/07/13 to 2016/12/12
-		querySql = "select datetime,open::money::numeric,close::money::numeric,\
-high::money::numeric,low::money::numeric, adjclose::money::numeric, volume from {0} where extract(epoch from (date(datetime)+ interval \'1 hour\')) > {1} and \
-extract(epoch from (date(datetime)- interval \'1 hour\')) < {2}"
-		querySql = querySql.format(tableName,start, end)
-		stockData = pd.read_sql_query(querySql,con=engine)
-		return stockData
-
 def unix_time_millis(dt):
 	epoch = datetime.datetime.utcfromtimestamp(0)
 	return (dt - epoch).total_seconds()
+
+def getStockDataWithTimeFromCSV(code, startTime, endTime):
+	code = code.zfill(4)+".HK.csv"
+	path = "/home/edenpan/code/python/myInterest/financial/hkStockData/"
+	stockData = pd.read_csv(path, infer_datetime_format=True, header=0,
+							names=['date', 'open', 'high', 'low', 'close', 'adjclose', 'volume'])
+	print(stockData)
+	startData = stockData[stockData['date'] >= startTime]
+	stockData = startData[startData['date'] <= endTime]
+	print(stockData)
+	return stockData
 
 def transferDate(strDate):
 	date = strDate.split('-')
