@@ -45,7 +45,7 @@ class HierarchinalParticleSwarmOp(pso.ParticleSwarmOp):
 		# Using a time-varying reinitialization velocity strategy max velocity is len(value)
 		
 		while not self.strategy.checkParams(**tempExecParams):	
-			for key, value in self.searchParams.iteritems():
+			for key, value in self.searchParams.items():
 				# v = float((len(value)-1)/4) * float(self.iterCnt)/self.popSize)
 				v = (len(value)-1) * (1-float(self.iterCnt)/self.iterMax)
 				# print "v: " + str(v)

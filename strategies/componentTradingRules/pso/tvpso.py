@@ -51,7 +51,7 @@ class TimeVariantParticleSwarmOp(pso.ParticleSwarmOp):
 		self.c2 = (self.c2max-self.c2min) * (self.iterMax-self.iterCnt)/self.iterMax + self.c2min
 		while not self.strategy.checkParams(**tempExecParams):
 			tempExecParams = dict()
-			for key, value in self.searchParams.iteritems():
+			for key, value in self.searchParams.items():
 				self.randCnt = (self.randCnt + 1)%self.randomSize
 				#update c1,c2 and w
 				#because c1,c2 and w will keeping decrease and a high possible that decrease into 0 ,that can never go out the loop

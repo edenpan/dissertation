@@ -45,7 +45,7 @@ class ParticleSwarmOp:
 		self.searchParams = strategy.defaultParam()
 		self.dimensions = len(self.searchParams)
 		self.iterMax = 1
-		for key, value in self.searchParams.iteritems():
+		for key, value in self.searchParams.items():
 			self.iterMax = self.iterMax * len(value)
 		self.iterMax = self.iterMax/10
 		
@@ -58,7 +58,7 @@ class ParticleSwarmOp:
 			p.params = {}
 			p.v = {}
 			p.execparm = {}
-			for key, value in self.searchParams.iteritems():
+			for key, value in self.searchParams.items():
 				#keep each Particle began to search in the different part
 				t = random.randint(((len(value) - 1)/self.popSize) * i, ((len(value) - 1)/self.popSize) * (i + 1) )
 				p.params[key] = t
@@ -129,7 +129,7 @@ class ParticleSwarmOp:
 	def paramAdj(self, p):
 		tempExecParams = dict()
 		while not self.strategy.checkParams(**tempExecParams):
-			for key, value in self.searchParams.iteritems():
+			for key, value in self.searchParams.items():
 				#base on the function: V(t+1) = w*V(t) + C1*r1*(pbest - p[t]) + C2*r2*(gbest - p[t])
 				p.v[key] = int(self.w * p.v[key] + self.c1 * random.random() * (p.best.params[key] - p.params[key]) + \
 					self.c2 * random.random() * (self.gbest.params[key] - p.params[key]))

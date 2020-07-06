@@ -32,7 +32,7 @@ def runbackTest(stockData, result, oriCap = 10000.00, allRate = False, **kwargs)
 		stockNum = 0.0
 		# bestParam = result.columns[i]
 		effectRows = result.mask(result.columns[i], 0.0)
-		for date, signal in effectRows[result.columns[i]].iteritems():
+		for date, signal in effectRows[result.columns[i]].items():
 			#if the singal is buy(>0) and the state is False that no hold any stock,will excute buy
 			#the execute price is just the adjclose price that day's singal.
 			if (signal > 0) and (state == False):
