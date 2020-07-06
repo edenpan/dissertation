@@ -92,6 +92,7 @@ class ParticleSwarmOp:
 		self.setStrategy(strategyName)
 		self.iterMax = 50
 		log.info('max Iterate: ' + str(self.iterMax))
+
 		self.stockData = utils.getStockDataWithTime(code, stratDate, endDate)
 		self.initParameters()
 		self.initParticles()
@@ -179,6 +180,7 @@ class ParticleSwarmOp:
 					self.gbest = copy.deepcopy(p)
 					log.info('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.') 
 
+
 				if self.iterCnt > self.iterMax/4:
 					if abs(fitness - self.gbest.fitness) > dist:
 						dist = abs(fitness - self.gbest.fitness)
@@ -230,10 +232,10 @@ def runSTO():
 		for code in allHsiCode:	
 			record = pso.pso(strategy, code, '2013-07-13', '2016-12-12')
 			record = codeName.get(code) + '\t' + str(record)
-			print record
+			print(record)
 		end = time.time()
 		escape = end - start
-		print strategy,escape
+		print(strategy,escape)
 
 def testAll():
 	import time
@@ -268,7 +270,7 @@ def testAll():
 	fileObject.close()
 	end = time.time()
 	escape = end - start
-	log.info(escape) 
+	log.info(escape)
 
 if __name__=="__main__":
 	# testAll()

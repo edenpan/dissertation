@@ -7,11 +7,6 @@ import psycopg2
 import pandas as pd
 from sqlalchemy import create_engine
 import datetime
-import logging
-
-logging.basicConfig(format='%(asctime)s-%(levelname)s- %(message)s', level=logging.INFO)
-
-
 
 symbolList = {}
 conn = psycopg2.connect("dbname='stockdb' user='runner' password='tester'")
@@ -76,6 +71,23 @@ high::money::numeric,low::money::numeric, adjclose::money::numeric, volume from 
 extract(epoch from (date(datetime)- interval \'1 hour\')) < {2}"
 		querySql = querySql.format(tableName,start, end)
 		stockData = pd.read_sql_query(querySql,con=engine)			
+		return stockData
+
+def getStockDataWithTimeFromCSV(code, startTime, endTime):
+	code = code.lstrip("0")
+	symbolList = getSymbolList()
+	stockData = pd.DataFrame()
+	start = transferDate(startTime)
+	end = transferDate(endTime)
+	if(None != symbolList.get(code)):
+		tableName = symbolList.get(code)
+		engine = create_engine('postgresql://runner:tester@localhost/stockdb', echo=False)
+		#get data from 2013/07/13 to 2016/12/12
+		querySql = "select datetime,open::money::numeric,close::money::numeric,\
+high::money::numeric,low::money::numeric, adjclose::money::numeric, volume from {0} where extract(epoch from (date(datetime)+ interval \'1 hour\')) > {1} and \
+extract(epoch from (date(datetime)- interval \'1 hour\')) < {2}"
+		querySql = querySql.format(tableName,start, end)
+		stockData = pd.read_sql_query(querySql,con=engine)
 		return stockData
 
 def unix_time_millis(dt):
