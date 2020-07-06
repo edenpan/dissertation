@@ -9,7 +9,8 @@ from sqlalchemy import create_engine
 import datetime
 
 symbolList = {}
-conn = psycopg2.connect("dbname='stockdb' user='runner' password='tester'")
+# conn = psycopg2.connect("dbname='stockdb' user='runner' password='tester'")
+conn
 def getSymbolList():
 	global symbolList, conn
 	if len(symbolList) == 0:
