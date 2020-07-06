@@ -80,7 +80,7 @@ def unix_time_millis(dt):
 
 def getStockDataWithTimeFromCSV(code, startTime, endTime):
 	code = code.zfill(4)+".HK.csv"
-	path = "/home/edenpan/code/python/myInterest/financial/hkStockData/"
+	path = "/home/edenpan/code/python/myInterest/financial/hkStockData/" + code
 	stockData = pd.read_csv(path, infer_datetime_format=True, header=0,
 							names=['date', 'open', 'high', 'low', 'close', 'adjclose', 'volume'])
 	print(stockData)
