@@ -59,6 +59,9 @@ class ParticleSwarmOp:
 			p.v = {}
 			p.execparm = {}
 			for key, value in self.searchParams.items():
+				log.info("(len(value) - 1)"+(len(value) - 1))
+				log.info("self.popSize"+self.popSize)
+				log.info("key,value:" + key + value)
 				#keep each Particle began to search in the different part
 				t = random.randint(((len(value) - 1)/self.popSize) * i, ((len(value) - 1)/self.popSize) * (i + 1) )
 				p.params[key] = t
