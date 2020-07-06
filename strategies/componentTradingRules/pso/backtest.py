@@ -76,16 +76,16 @@ if __name__=="__main__":
 	strategy = class_()
 
 	params = strategy.defaultParam()
-	print params
+	print(params)
 	# params['stockData'] = stockData
 	isTrain = True
 	stockDataTrain = utils.getStockDataTrain("0005", isTrain)
 	bStratRes, bBstRes = runbackTest(stockDataTrain, strategy, **params )
-	print bStratRes, bBstRes
+	print(bStratRes, bBstRes)
 	bParam = strategy.parseparams(bBstRes[0])
-	print bParam
+	print(bParam)
 	stockDataTest = utils.getStockDataTrain("0005", not isTrain)
-	print runbackTest(stockDataTest, strategy, **bParam)
+	print(runbackTest(stockDataTest, strategy, **bParam))
 	# runbackTest('0005', "BollingerBands", False, **params)
 
 

@@ -88,7 +88,7 @@ class ParticleSwarmOp:
 
 		self.setStrategy(strategyName)
 		self.iterMax = 50
-		print 'max Iterate: ' + str(self.iterMax)
+		print('max Iterate: ' + str(self.iterMax))
 		self.stockData = utils.getStockDataWithTime(code, stratDate, endDate)
 		self.initParameters()
 		self.initParticles()
@@ -102,19 +102,19 @@ class ParticleSwarmOp:
 		# print "self.iterMax: " + str(self.iterMax)
 		# self.stopConImpBest(self.iterMax/2)
 		print("find one%s,%s", self.gbest.execparm, self.gbest.params)				
-		print '\nParticle Swarm Optimisation\n'
-		print 'PARAMETERS\n','-'*9
-		print 'Population size : ', self.popSize
-		print 'Dimensions	  : ', self.dimensions
-		print 'ParticleSwarmOp Name :', self.psoName
-		print 'stop Condition :', self.stopCondition
-		print 'strategyName:', strategyName
-		print 'stockCode:', code
-		print 'RESULTS\n', '-'*7
-		print 'ROI   : ', self.gbest.fitness
-		print 'gbest params	: ', self.gbest.params
-		print 'gbest execparm	: ', self.gbest.execparm
-		print 'iterations	  : ', self.iterCnt
+		print('\nParticle Swarm Optimisation\n')
+		print('PARAMETERS\n','-'*9)
+		print('Population size : ', self.popSize)
+		print('Dimensions	  : ', self.dimensions)
+		print('ParticleSwarmOp Name :', self.psoName)
+		print('stop Condition :', self.stopCondition)
+		print('strategyName:', strategyName)
+		print('stockCode:', code)
+		print('RESULTS\n', '-'*7)
+		print('ROI   : ', self.gbest.fitness)
+		print('gbest params	: ', self.gbest.params)
+		print('gbest execparm	: ', self.gbest.execparm)
+		print('iterations	  : ', self.iterCnt)
 		# record = 'strategyName:\t' + str(self.strategyName) + '\tcode:\t' + str(code) + '\texecparm:\t' \
 		# + str(self.gbest.execparm) + '\tROI:\t' + str(self.gbest.fitness)
 		record = str(self.strategyName) + '\t' + str(code) + '\t' \
@@ -151,7 +151,7 @@ class ParticleSwarmOp:
 					p.best = p
 					#update the global best record.
 				if fitness > self.gbest.fitness:
-					print 'find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.'
+					print('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.')
 					self.gbest = copy.deepcopy(p)
 				self.paramAdj(p)		
 
@@ -175,7 +175,7 @@ class ParticleSwarmOp:
 					#update the global best record.
 				if fitness > self.gbest.fitness:
 					self.gbest = copy.deepcopy(p)
-					print 'find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.'
+					print('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.')
 
 				if self.iterCnt > self.iterMax/4:
 					if abs(fitness - self.gbest.fitness) > dist:
@@ -206,14 +206,14 @@ class ParticleSwarmOp:
 					p.best = p
 					#update the global best record.
 				if fitness > self.gbest.fitness:
-					print 'find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.'
+					print('find one ' + str(p.execparm) + ' ' +  str(p.params) + ' at ' + str(self.iterCnt) + ' iterations.')
 					# print("original one%s,%s", self.gbest.execparm, self.gbest.params)
 					self.gbest = copy.deepcopy(p)
 					keepCnt = 0
 				self.paramAdj(p)
 
 			if keepCnt > self.stopThreshold:
-					print 'will stop ' + str(keepCnt )
+					print('will stop ' + str(keepCnt ))
 					stop = True				
 
 def runSTO():
@@ -228,10 +228,10 @@ def runSTO():
 		for code in allHsiCode:	
 			record = pso.pso(strategy, code, '2013-07-13', '2016-12-12')
 			record = codeName.get(code) + '\t' + str(record)
-			print record
+			print(record)
 		end = time.time()
 		escape = end - start
-		print strategy,escape
+		print(strategy,escape)
 
 def testAll():
 	import time
@@ -266,7 +266,7 @@ def testAll():
 	fileObject.close()
 	end = time.time()
 	escape = end - start
-	print escape			
+	print(escape)
 
 if __name__=="__main__":
 	# testAll()
