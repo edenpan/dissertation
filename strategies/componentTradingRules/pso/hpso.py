@@ -84,7 +84,7 @@ if __name__=="__main__":
 	for strategy in allStrategy:
 		fileObject = open(strategy+'Result', 'w+')
 		for code in allHsiCode:	
-			record = pso.pso( strategy, code)
+			record = pso.pso( strategy, code,'2015-01-01','2018-12-31')
 			record = codeName.get(code) + '\t' + record
 			fileObject.write(record)
 		fileObject.close()	

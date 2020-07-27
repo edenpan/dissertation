@@ -40,7 +40,7 @@ def WeightAdjRule(CurrentDate, code, ms = 200):
 	# print weight
 	stockData = utils.getStockData(code)
 	testStockData = stockData[:ms]
-	print testStockData
+	print(testStockData)
 	profit = []
 	profitNum = 0
 	# for i in range(len(weight)):
@@ -48,12 +48,12 @@ def WeightAdjRule(CurrentDate, code, ms = 200):
 		for k in bb_k:
 			res = bb.BollingerBands(testStockData, bb_n, bb_k)
 			invest = res["score" + str(n) + '_' +  str(k)]
-			print invest
+			print(invest)
 			capNum = 10000.0
 			state = False
-			print invest
+			print(invest)
 			for row in res.itertuples():
-				print row
+				print(invest)
 
 				
 
