@@ -41,9 +41,9 @@ class RelativeStrengthIndex:
 		# n = range(10,31)
 		# ob = range(70, 96)
 		# os = range(10, 32)
-		n = range(10,31)
-		ob = range(70, 96)
-		os = range(10, 32)
+		n = list(range(10,31))
+		ob = list(range(70, 96))
+		os = list(range(10, 32))
 		parms = {'n': n, 'ob': ob, 'os': os}
 		return parms
 

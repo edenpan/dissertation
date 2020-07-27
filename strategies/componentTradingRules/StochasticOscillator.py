@@ -44,10 +44,10 @@ class StochasticOscillator:
 		return {'n': n, 'ob': ob, 'os': os, 'm': m}
 
 	def defaultParam(self):
-		n = range(5,15)+range(15,200,5)
-		m = range(3,12)
-		ob = range(70, 96)
-		os = range(10, 32)
+		n = list(range(5,15))+list(range(15,200,5))
+		m = list(range(3,12))
+		ob = list(range(70, 96))
+		os = list(range(10, 32))
 		# n = [3]
 		# m = [3]
 		# ob = [70]

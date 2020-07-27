@@ -72,6 +72,6 @@ if __name__=="__main__":
 	stockDataTrain = utils.getStockDataTrain("0005", True)
 	trb = tradingRangeBreakout()
 	params = trb.defaultParam()
-	print(trb.run(stockDataTrain, **params))
+	print((trb.run(stockDataTrain, **params)))
 
 	

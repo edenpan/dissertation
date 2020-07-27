@@ -29,8 +29,8 @@ class OnBalanceVolAve:
 		return {'nl': n, 'ns': k}
 
 	def defaultParam(self):
-		nl=range(5,250,5)
-		ns= range(1,10)+range(15,200,5)
+		nl=list(range(5,250,5))
+		ns= list(range(1,10))+list(range(15,200,5))
 		parms = {'nl': nl, 'ns': ns}
 		return parms
 	

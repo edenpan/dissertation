@@ -28,9 +28,9 @@ class MovingAverage:
 		return {'nl': n, 'ns': k}
 
 	def defaultParam(self):
-		nl = range(15, 255, 5)
-		ns_small = range(1, 10, 1)
-		ns_big = range(10, 200, 5)
+		nl = list(range(15, 255, 5))
+		ns_small = list(range(1, 10, 1))
+		ns_big = list(range(10, 200, 5))
 		ns = ns_small + ns_big
 		parms = {'nl': nl, 'ns': ns}
 		return parms

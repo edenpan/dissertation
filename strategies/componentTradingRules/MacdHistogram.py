@@ -31,9 +31,9 @@ class MacdHistogram:
 		return {'nl': nl, 'ns': ns, 'time': t}
 
 	def defaultParam(self):
-		ns = range(8, 21, 1) # 13
-		nl = range(24, 40, 2) #8
-		t = range(8, 15, 1) # 6
+		ns = list(range(8, 21, 1)) # 13
+		nl = list(range(24, 40, 2)) #8
+		t = list(range(8, 15, 1)) # 6
 		# ns = [12]
 		# nl = [26]		
 		# t = [9]		
