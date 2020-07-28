@@ -98,7 +98,10 @@ class ParticleSwarmOp:
 		log.info('max Iterate: ' + str(self.iterMax))
 
 		# self.stockData = utils.getStockDataWithTime(code, stratDate, endDate)
-		self.stockData = utils.getStockDataWithTimeFromCSV(code, stratDate, endDate)
+		try:
+			self.stockData = utils.getStockDataWithTimeFromCSV(code, stratDate, endDate)
+		except FileNotFoundError:
+                    return str(code) + "file not found"
 		self.initParameters()
 		self.initParticles()
 		# let the first particle be the global best
