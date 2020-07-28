@@ -9,6 +9,7 @@ from backtest import runbackTest
 import sys
 sys.path.append('../../')
 import utils
+import json
 import copy
 import importlib
 import pso
@@ -73,11 +74,14 @@ if __name__=="__main__":
 
 	# allHsiCode = ['2382', '19', '151', '1044']
 	# allStrategy = ['MovingMomentum']
-	allHsiCode = ['5', '11', '23', '388', '939', '1299', '1398', '2318', '2388', '2628', '3328', '3988', \
-				  '2', '3', '6', '836', '1038', '12', '16', '17', '83', '101', '688', '823', '1109', '1113', '2007', \
-				  '1', '19', '27', '66', '144', '151', '175', '267', '288', '386', '700', '762', '857', '941',
-				  '992', \
-				  '1044', '1088', '1928', '2018', '2319', '2382']
+	# allHsiCode = ['5', '11', '23', '388', '939', '1299', '1398', '2318', '2388', '2628', '3328', '3988', \
+	# 			  '2', '3', '6', '836', '1038', '12', '16', '17', '83', '101', '688', '823', '1109', '1113', '2007', \
+	# 			  '1', '19', '27', '66', '144', '151', '175', '267', '288', '386', '700', '762', '857', '941',
+	# 			  '992', \
+	# 			  '1044', '1088', '1928', '2018', '2319', '2382']
+	allHsiCode = []
+	with open('../stockList.out') as json_file:
+		allHsiCode = json.load(json_file)
 	allStrategy = ['MovingAverage', 'BollingerBandsStrategy', 'MacdHistogram', 'RelativeStrengthIndex', 'OnBalanceVolAve', 'tradingRangeBreakout','StochasticOscillator']
 	codeName = {'5': 'HSBCHoldings', '11': 'HangSengBank', '23': 'BankofEAsia', '388': 'HKEx', '939': 'CCB', '1299': 'AIA', '1398': 'ICBC', '2318': 'PingAn', '2388': 'BOCHongKong', '2628': 'ChinaLife', '3328': 'Bankcomm', '3988': 'BankofChina', '2': 'CLPHoldings', '3': 'HK&ChinaGas', '6': 'PowerAssets', '836': 'ChinaResPower', '1038': 'CKIHoldings', '12': 'HendersonLand', '16': 'SHKPpt', '17': 'NewWorldDev', '83': 'SinoLand', '101': 'HangLungPpt', '688': 'ChinaOverseas', '823': 'LinkREIT', '1109': 'ChinaResLand', '1113': 'CKAsset', '1997': 'WharfREIC', '2007': 'CountryGarden', '1': 'CKHHoldings', '19': 'SwirePacificA', '27': 'GalaxyEnt', '66': 'MTRCorporation', '144': 'ChinaMerPort', '151': 'WantWantChina', '175': 'GeelyAuto', '267': 'CITIC', '288': 'WHGroup', '386': 'SinopecCorp', '700': 'Tencent', '762': 'ChinaUnicom', '857': 'PetroChina', '883': 'CNOOC', '941': 'ChinaMobile', '992': 'LenovoGroup', '1044': 'HenganIntl', '1088': 'ChinaShenhua', '1928': 'SandsChinaLtd', '2018': 'AACTech', '2319': 'MengniuDairy', '2382': 'SunnyOptical'}
 
