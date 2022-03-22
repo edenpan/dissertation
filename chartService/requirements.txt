@@ -1,5 +1,5 @@
 numpy==1.14.3
-Django==1.8.5
+Django==2.2.27
 requests>=2.20.0
 Flask==1.0.2
 python_dateutil==2.7.3
