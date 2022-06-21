@@ -4,7 +4,7 @@ lxml==4.6.5
 selenium==3.14.0
 SQLAlchemy==1.2.7
 six==1.10.0
-numpy==1.14.3
+numpy==1.22.0
 Flask==1.0.2
 statsmodels==0.9.0
 Quandl==3.3.0
