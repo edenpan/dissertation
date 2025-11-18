@@ -22,8 +22,8 @@ search	| return search result
 ### /search
 
 	GET 	/search
-	[{"symbol":"0939","full_name":"China Construction Bank","description":"China Construction Bank-China Construction Bank","exchange":"","ticker":"0939","type":"stock"},
-	{"symbol":"0005","full_name":"HSBC Holdings plc","description":"HSBC Holdings plc-HSBC Holdings plc","exchange":"","ticker":"0005","type":"stock"}]
+	[{"symbol":"AAPL","full_name":"Apple Inc.","description":"Apple Inc.","exchange":"NASDAQ","ticker":"AAPL","type":"stock"},
+	{"symbol":"MSFT","full_name":"Microsoft Corporation","description":"Microsoft Corporation","exchange":"NASDAQ","ticker":"MSFT","type":"stock"}]
 
 ### /config
 
@@ -50,15 +50,15 @@ search	| return search result
 	GET /symbols?symbol=<symbol>	
 	
 	{
-	  "name": "0700",
-	  "full_name": "Tencent Holdings Limited",
-	  "ticker": "0700",
-	  "description": "0700-Tencent Holdings Limited",
+	  "name": "AAPL",
+	  "full_name": "Apple Inc.",
+	  "ticker": "AAPL",
+	  "description": "Apple Inc.",
 	  "type": "stock",
-	  "session": "0930-1200,1300-1600",
-	  "exchange": "香港证券交易所",
-	  "listed_exchange": "香港证券交易所",
-	  "timezone": "Asia/Hong_Kong",
+	  "session": "0930-1600",
+	  "exchange": "NASDAQ",
+	  "listed_exchange": "NASDAQ",
+	  "timezone": "America/New_York",
 	  "pricescale": 100,
 	  "minmov": 1,
 	  "has_intraday": true,
@@ -68,21 +68,17 @@ search	| return search result
 	    "15",
 	    "30",
 	    "60",
-	    "1D",
-	    "1W",
-	    "1M"
+	    "1D"
 	  ],
 	  "has_daily": true,
 	  "has_weekly_and_monthly": true,
 	  "has_no_volume": false,
-	  "sector": "Tencent Holdings Limited",
-	  "industry": "0700",
-	  "currency_code": "HKD"
+	  "currency_code": "USD"
 	}
 	
-### /history?symbol=0700
+### /history?symbol=AAPL
 
-	GET /history?symbol=0700
+	GET /history?symbol=AAPL
 		{
 	  "s": "ok",
 	  "t": [
@@ -129,24 +125,23 @@ search	| return search result
 
 	[
 	  {
-	    "symbol": "0939",
-	    "full_name": "China Construction Bank",
-	    "description": "China Construction Bank-China Construction Bank",
-	    "exchange": "",
-	    "ticker": "0939",
+	    "symbol": "AAPL",
+	    "full_name": "Apple Inc.",
+	    "description": "Apple Inc.",
+	    "exchange": "NASDAQ",
+	    "ticker": "AAPL",
 	    "type": "stock"
 	  },
 	  {
-	    "symbol": "0005",
-	    "full_name": "HSBC Holdings plc",
-	    "description": "HSBC Holdings plc-HSBC Holdings plc",
-	    "exchange": "",
-	    "ticker": "0005",
+	    "symbol": "MSFT",
+	    "full_name": "Microsoft Corporation",
+	    "description": "Microsoft Corporation",
+	    "exchange": "NASDAQ",
+	    "ticker": "MSFT",
 	    "type": "stock"
 	  }
 	  ...
 	]	
 		
 	
-
 

@@ -16,29 +16,14 @@ GET /history?symbol=Indic#0005#MAC5&resolution=D&from=1499667633&to=1531808493
 
 
 ### python backend server
-A mini flask app, that use to response the charting_libaray requests as the ChartServices.md mentioned.  
-And a simple demo for the strategy, mac5 has been implement in the symbolHistory.py.
-The file need to be change:
+A mini Flask app responds to the charting library requests described in `ChartServices.md`.  
+Custom indicator endpoints now live inside `chart_service/services/history.py`. The `HistoryService.fetch` method already understands symbols in the form `Indic#<symbol>#<indicator>` and ships with MAC5 and Bollinger Bands examples.
 
-1. stockData/SymbolListInfo.py  
-	**self.supportIndicator = ["MAC5"]** add the customer indicator name in here to return the symbol feature.
-2. stockData/SymbolHistory.py
-	
-		#in these part to judge whether ask for history or for
-		# the technical indicator data.
-		if(self.symbolName.startswith("Indic#")):
-			code = self.symbolName.split('#')[1]
-			technical = self.symbolName.split('#')[2]
-			techData = []
-			#In here can add more custormer indicator
-			if( technical == 'MAC5'):
-				macData = mac(code)
-				result["s"] = "ok"
-				result["c"] = macData.get('m')
-				result["t"] = macData.get('t')
+To expose new indicators:
 
-			return result
-		
+1. Extend the logic in `HistoryService._build_indicator_payload` (and supporting helpers) to calculate the indicator.
+2. Add the indicator name to the front-end widget (e.g. `Indic#AAPL#MyIndicator`).
+3. Optionally enrich the discovery experience by declaring the synthetic symbol in a custom configuration file referenced by `CHART_SERVICE_CONFIG`.
 	
 
 
@@ -50,7 +35,6 @@ The file need to be change:
 
 		
  
-
 
 
 

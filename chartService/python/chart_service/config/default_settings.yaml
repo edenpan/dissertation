@@ -1,0 +1,66 @@
+debug: false
+timezone: America/New_York
+session: "0930-1600"
+supported_resolutions:
+  - "1"
+  - "5"
+  - "15"
+  - "30"
+  - "60"
+  - "1D"
+provider: yfinance
+provider_options:
+  auto_adjust: true
+  progress: false
+  prepost: false
+symbols:
+  - symbol: AAPL
+    full_name: Apple Inc.
+    description: Apple Inc.
+    exchange: NASDAQ
+    listed_exchange: NASDAQ
+    timezone: America/New_York
+    session: "0930-1600"
+    currency: USD
+    price_scale: 100
+    minmov: 1
+  - symbol: MSFT
+    full_name: Microsoft Corporation
+    description: Microsoft Corporation
+    exchange: NASDAQ
+    listed_exchange: NASDAQ
+    timezone: America/New_York
+    session: "0930-1600"
+    currency: USD
+    price_scale: 100
+    minmov: 1
+  - symbol: GOOG
+    full_name: Alphabet Inc. Class C
+    description: Alphabet Inc. Class C
+    exchange: NASDAQ
+    listed_exchange: NASDAQ
+    timezone: America/New_York
+    session: "0930-1600"
+    currency: USD
+    price_scale: 100
+    minmov: 1
+  - symbol: AMZN
+    full_name: Amazon.com, Inc.
+    description: Amazon.com, Inc.
+    exchange: NASDAQ
+    listed_exchange: NASDAQ
+    timezone: America/New_York
+    session: "0930-1600"
+    currency: USD
+    price_scale: 100
+    minmov: 1
+  - symbol: TSLA
+    full_name: Tesla, Inc.
+    description: Tesla, Inc.
+    exchange: NASDAQ
+    listed_exchange: NASDAQ
+    timezone: America/New_York
+    session: "0930-1600"
+    currency: USD
+    price_scale: 100
+    minmov: 1

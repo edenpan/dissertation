@@ -1,16 +1,25 @@
 # dissertation
 
 ## chartService
-The backend of the chartView service.  
-And the APIs that need to be implemented to run the TradingView Libaray are described as [here](https://github.com/edenpan/dissertation/blob/master/chartService/ChartServices.md).  
-The [python](https://github.com/edenpan/dissertation/tree/master/chartService/python) directory is the runnable backend which making use of Flask to implement the APIs to provide the chart data.
-Running this Flask web service(Python2.7):
+The backend of the chart view service now targets **Python 3.10+** and retrieves **US equity data through Yahoo Finance** via `yfinance`.
 
-    pip install -r requirements.txt
-    export FLASK_APP='miniapp'
-    flask run
+APIs that are required by TradingView remain documented in [chartService/ChartServices.md](chartService/ChartServices.md).
 
-To run the TradingView lib, there still need a nodejs project.
+The runnable Flask backend lives in [chartService/python](chartService/python). To start it locally:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r chartService/python/requirements.txt
+export FLASK_APP=miniapp:app
+# Optional: override the default config
+# export CHART_SERVICE_CONFIG=/path/to/settings.yaml
+flask run
+```
+
+Configuration is fully data-driven. Copy `chartService/python/chart_service/config/default_settings.yaml`, adjust the symbol list or provider settings, and point `CHART_SERVICE_CONFIG` at the new file.
+
+> The historical Django-based `chartService/saveload_backend` remains a legacy component and will need additional work before it can run on Python 3.
 
 ## crawler
 The data crawler part.  
