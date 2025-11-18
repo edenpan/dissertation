@@ -6,7 +6,13 @@ import sys
 from datetime import date, datetime, timedelta
 from typing import Iterable, List
 
-from data_pipeline import IngestionReport, SymbolConfig, fetch_and_store, load_symbols_from_config
+from data_pipeline import (
+    IngestionReport,
+    SymbolConfig,
+    fetch_and_store,
+    load_index_constituents,
+    load_symbols_from_config,
+)
 from strategies.backtester import BacktestResult, run_sma_backtest
 
 
@@ -23,6 +29,20 @@ def main(argv: Iterable[str] | None = None) -> int:
         try:
             configs = _resolve_symbol_configs(args)
         except ValueError as exc:
+            parser.error(str(exc))
+        report = fetch_and_store(
+            configs,
+            start=args.start,
+            end=args.end,
+            force=args.force,
+        )
+        _print_ingestion_report(report)
+        return 0
+
+    if args.command == "fetch-index":
+        try:
+            configs = load_index_constituents(args.name)
+        except Exception as exc:
             parser.error(str(exc))
         report = fetch_and_store(
             configs,
@@ -57,6 +77,44 @@ def main(argv: Iterable[str] | None = None) -> int:
         except ValueError as exc:
             parser.error(str(exc))
         _print_backtest_result(result)
+        return 0
+
+    if args.command == "backtest-index":
+        start = args.start or (date.today() - timedelta(days=365 * 2))
+        if start > args.end:
+            parser.error("`--start` must be earlier than `--end`.")
+
+        try:
+            configs = load_index_constituents(args.name)
+        except Exception as exc:
+            parser.error(str(exc))
+
+        if args.fetch_missing:
+            fetch_and_store(
+                configs,
+                start=start,
+                end=args.end,
+                force=args.force,
+            )
+
+        results: list[BacktestResult] = []
+        skipped: list[tuple[str, str]] = []
+        for cfg in configs:
+            try:
+                result = run_sma_backtest(
+                    symbol=cfg.symbol,
+                    start=start,
+                    end=args.end,
+                    short_window=args.short_window,
+                    long_window=args.long_window,
+                    initial_capital=args.capital,
+                )
+            except ValueError as exc:
+                skipped.append((cfg.symbol, str(exc)))
+                continue
+            results.append(result)
+
+        _print_index_backtests(results, skipped)
         return 0
 
     parser.print_help()
@@ -134,6 +192,69 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Download any missing price history before running the backtest.",
     )
 
+    fetch_index_parser = subparsers.add_parser("fetch-index", help="Fetch data for every constituent of an index.")
+    fetch_index_parser.add_argument("name", type=str, help="Index identifier (e.g. nasdaq100).")
+    fetch_index_parser.add_argument(
+        "--start",
+        type=_parse_date,
+        help="Inclusive start date (YYYY-MM-DD). Defaults to five years ago.",
+        default=None,
+    )
+    fetch_index_parser.add_argument(
+        "--end",
+        type=_parse_date,
+        help="Inclusive end date (YYYY-MM-DD). Defaults to today.",
+        default=None,
+    )
+    fetch_index_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Remove overlapping rows before inserting fresh data.",
+    )
+
+    backtest_index_parser = subparsers.add_parser("backtest-index", help="Run a backtest across an index's constituents.")
+    backtest_index_parser.add_argument("name", type=str, help="Index identifier (e.g. nasdaq100).")
+    backtest_index_parser.add_argument(
+        "--start",
+        type=_parse_date,
+        help="Inclusive start date (YYYY-MM-DD). Defaults to two years ago.",
+        default=None,
+    )
+    backtest_index_parser.add_argument(
+        "--end",
+        type=_parse_date,
+        help="Inclusive end date (YYYY-MM-DD). Defaults to today.",
+        default=date.today(),
+    )
+    backtest_index_parser.add_argument(
+        "--short-window",
+        type=int,
+        default=20,
+        help="Lookback window for the fast SMA. Default: 20 trading days.",
+    )
+    backtest_index_parser.add_argument(
+        "--long-window",
+        type=int,
+        default=50,
+        help="Lookback window for the slow SMA. Default: 50 trading days.",
+    )
+    backtest_index_parser.add_argument(
+        "--capital",
+        type=float,
+        default=10_000.0,
+        help="Initial capital for the strategy. Default: 10,000.",
+    )
+    backtest_index_parser.add_argument(
+        "--fetch-missing",
+        action="store_true",
+        help="Download any missing price history before running the backtest.",
+    )
+    backtest_index_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Remove overlapping rows before inserting fresh data when fetching missing data.",
+    )
+
     return parser
 
 
@@ -191,6 +312,37 @@ def _print_backtest_result(result: BacktestResult) -> None:
                 f"    {trade.traded_at} | {trade.action:<4} | "
                 f"${trade.price:,.2f} | {trade.shares:,.4f} | ${trade.cash_after:,.2f}"
             )
+
+
+def _print_index_backtests(results: List[BacktestResult], skipped: List[tuple[str, str]]) -> None:
+    if not results:
+        print("No backtests were completed.")
+        if skipped:
+            print("Skipped symbols:")
+            for symbol, reason in skipped:
+                print(f"  - {symbol}: {reason}")
+        return
+
+    aggregated_return = sum(result.total_return for result in results)
+    average_return = aggregated_return / len(results)
+    best = max(results, key=lambda r: r.total_return)
+    worst = min(results, key=lambda r: r.total_return)
+
+    print(f"Completed {len(results)} backtests.")
+    print(f"Average return: {average_return * 100:,.2f}%")
+    print(f"Best performer: {best.symbol} ({best.total_return * 100:,.2f}%)")
+    print(f"Worst performer: {worst.symbol} ({worst.total_return * 100:,.2f}%)")
+    print("Results (symbol | total return | final equity | trades):")
+    for result in sorted(results, key=lambda r: r.total_return, reverse=True):
+        print(
+            f"  - {result.symbol}: {result.total_return * 100:,.2f}% | "
+            f"${result.final_value:,.2f} | {result.total_trades} trades"
+        )
+
+    if skipped:
+        print("Skipped symbols:")
+        for symbol, reason in skipped:
+            print(f"  - {symbol}: {reason}")
 
 
 if __name__ == "__main__":

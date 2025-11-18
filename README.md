@@ -34,6 +34,23 @@ Tools for collecting US equity market data and experimenting with trading strate
    ```
    Add `--fetch-missing` to pull data automatically before simulating.
 
+## Index Workflows
+
+Fetch every NASDAQ-100 constituent and store their daily bars:
+
+```bash
+python manage.py fetch-index nasdaq100 --start 2023-01-01 --end 2024-01-01
+```
+
+Run the SMA crossover backtest across the same basket:
+
+```bash
+python manage.py backtest-index nasdaq100 --start 2023-01-01 --end 2024-01-01 \
+  --short-window 20 --long-window 60 --fetch-missing
+```
+
+The summary highlights average/best/worst performers and prints per-symbol returns.
+
 ## Configuration
 
 The data stack reads connection details from the environment. Defaults match `docker-compose.yml`:
