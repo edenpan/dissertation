@@ -1,129 +1,135 @@
-import psycopg2
-import psycopg2.extras
+from __future__ import annotations
+
+import logging
+from datetime import date
+from typing import Dict, Iterable, List, Sequence, Tuple
+
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import Select, select
+from sqlalchemy.dialects.mysql import insert as mysql_insert
 
-symbolList = []
-conn = psycopg2.connect("dbname='stockdb' user='runner' password='tester'")
-engine = create_engine('postgresql://runner:tester@localhost/stockdb', echo=False) 
+from common.db import DailyPrice, Symbol, get_engine, get_session, init_db
 
-#get the HSI symbol code from the postgreSQL.
-def getSymbolList():
-	global symbolList
-	if len(symbolList) == 0:
-		print "request symbolist " +  str(len(symbolList))
-		conn = psycopg2.connect("dbname=stockdb user=runner")
-		cur = conn.cursor()
-		cur.execute("SELECT Symbol,tablename FROM config")
-		symbolList = cur.fetchall()		
-	print "2 symbolist " +   str(len(symbolList))
-	return symbolList
-	
-def insert1():
-	print getSymbolList()
-	global conn
-	cur = conn.cursor()
-	l = []
-	l.append("'2015-06-30',17599.960938,17714.660156,17576.500000,17619.509766,17619.509766,126460000")
-	l.append("'2015-07-01',17638.119141,17801.830078,17638.119141,17757.910156,17757.910156,87010000")
-	l.append("'2015-07-02',17763.320313,17825.490234,17687.519531,17730.109375,17730.109375,83080000")
-	insert = "INSERT INTO aac_tech(Datetime, Open, High, Low, Close, AdjClose, Volume) VALUES %s"
-	print str(l)
-	i = 0;
-	insertList = "["
-	for i in range(len(l) - 1):
-		insertList += "(" + l[i] +"),"
-	insertList += "(" + l[len(l)-1] +")]"	
-	print insertList	
-	psycopg2.extras.execute_values(cur, "INSERT INTO aac_tech(Datetime, Open, High, Low , Close, AdjClose , Volume) VALUES %s", [('2015-06-30',17599.960938,17714.660156,17576.500000,17619.509766,17619.509766,126460000),('2015-07-01',17638.119141,17801.830078,17638.119141,17757.910156,17757.910156,87010000),('2015-07-02',17763.320313,17825.490234,17687.519531,17730.109375,17730.109375,83080000)])
-	conn.commit()
+logger = logging.getLogger(__name__)
+
+_symbol_cache: Dict[str, str] = {}
 
 
-def insert2(tableName, recordlist):
-	global conn
-	cur = conn.cursor()
-	print tableName,recordlist
-	insertList = "INSERT INTO %s(Datetime, Open, High, Low, Close, AdjClose, Volume) VALUES "%tableName
-	print insertList
-	for i in range(len(recordlist)):
-		#if the return is null,just return the index.
-		if 'null' == recordlist[i].split(',')[0]:
-			print tableName
-			print "*" * 20
-			print i
-			return 
-		print recordlist[i]
-		meta = recordlist[i].split(',')
-		meta[0] = "\'" + meta[0] + "\'"				
-		recordlist=" ".join(meta)	
-		insertList += "(" + recordlist +"),"
-	insertList += "(" + recordlist[len(recordlist)-1] +");"	
-	print insertList
-	cur.execute(insertList)
-	conn.commit()
+def getSymbolList() -> List[Tuple[str, str]]:
+    """Return cached (symbol, display_name) tuples."""
+    global _symbol_cache
+    if not _symbol_cache:
+        init_db()
+        with get_session() as session:
+            rows = session.execute(select(Symbol.symbol, Symbol.full_name)).all()
+        _symbol_cache = {
+            row.symbol: row.full_name or row.symbol  # type: ignore[attr-defined]
+            for row in rows
+        }
+    return list(_symbol_cache.items())
 
 
-def insertPd(tableName, pdRecord):
-	global engine, conn
-	insertList = "INSERT INTO %s(datetime, open, high, low, close, adjclose, volume) VALUES "%tableName
-	pdRecord['datetime'] = '\'' + pdRecord['datetime'] + '\''
-	# print pdRecord
-	try:
-		pdRecord.to_sql(name=tableName, con=engine,schema = 'public', if_exists='append',index=False, chunksize=10000)
-		# sql = "select count(*) from %s;"%tableName
-		# df = pd.read_sql(sql,con)
-		conn.commit()
-	except psycopg2.DatabaseError as e:
-		print('Error %s' % e)
-		sys.exit(1)
-	finally:
-		if conn:
-			conn.close()		
-	
+def insertPd(symbol_name: str, pdRecord: pd.DataFrame | None) -> None:
+    """Append or update price rows from a DataFrame."""
+    if pdRecord is None or pdRecord.empty:
+        return
 
-def testList():
-	global conn
-	cur = conn.cursor()
-	l = []
-	l.append("'2015-06-30',17599.960938,17714.660156,17576.500000,17619.509766,17619.509766,126460000")
-	l.append("'2015-07-01',17638.119141,17801.830078,17638.119141,17757.910156,17757.910156,87010000")
-	l.append("'2015-07-02',17763.320313,17825.490234,17687.519531,17730.109375,17730.109375,83080000")
-	insertList = "INSERT INTO aac_tech(Datetime, Open, High, Low, Close, AdjClose, Volume) VALUES "
-	print(str(l))
-	i = 0;
-	# insertList = "["
-	for i in range(len(l) - 1):
-		insertList += "(" + l[i] +"),"
-	insertList += "(" + l[len(l)-1] +");"	
-	# print insertList
-	cur.execute(insertList)
-	conn.commit()
+    frame = pdRecord.copy()
+    frame.columns = [col.strip().lower() for col in frame.columns]
+    expected = {"datetime", "open", "high", "low", "close", "adjclose", "volume"}
+    if not expected.issubset(frame.columns):
+        missing = expected - set(frame.columns)
+        raise ValueError(f"DataFrame is missing columns: {', '.join(sorted(missing))}")
 
-def testPd():
-	global conn
-	cur = conn.cursor()
-	l = []
-	l.append("2015-06-30,17599.960938,17714.660156,17576.500000,17619.509766,17619.509766,126460000")
-	l.append("2015-07-01,17638.119141,17801.830078,17638.119141,17757.910156,17757.910156,87010000")
-	l.append("2015-07-02,17763.320313,17825.490234,17687.519531,17730.109375,17730.109375,83080000")
-	d = []
-	for a in l:
-		d.append(a.split(','))
-	# print d
-	df = pd.DataFrame(data=d, columns = ['datetime' ,'open' ,'high' ,'low' ,'close' ,'adjclose' ,'volume'])
-	# print df 
-	insertPd('aac_tech', df)
+    frame["datetime"] = pd.to_datetime(frame["datetime"]).dt.date
+    frame.rename(columns={"adjclose": "adj_close"}, inplace=True)
 
-def getDaliyData(tableName):
-	global engine
-	data = pd.read_sql_query('select datetime,open::money::numeric,close::money::numeric,high::money::numeric,low::money::numeric, adjclose::money::numeric, volume from %s'%tableName,con=engine)
-	return data
+    init_db()
+    with get_session() as session:
+        symbol_row = _ensure_symbol(session, symbol_name)
+        payload = []
+        for row in frame.itertuples(index=False):
+            payload.append(
+                {
+                    "symbol_id": symbol_row.id,
+                    "traded_at": row.datetime,
+                    "open": _nan_to_none(row.open),
+                    "high": _nan_to_none(row.high),
+                    "low": _nan_to_none(row.low),
+                    "close": _nan_to_none(row.close),
+                    "adj_close": _nan_to_none(row.adj_close),
+                    "volume": _nan_to_int(row.volume),
+                }
+            )
+
+        if not payload:
+            return
+
+        stmt = mysql_insert(DailyPrice).values(payload)
+        update_clause = {
+            "open": stmt.inserted.open,
+            "high": stmt.inserted.high,
+            "low": stmt.inserted.low,
+            "close": stmt.inserted.close,
+            "adj_close": stmt.inserted.adj_close,
+            "volume": stmt.inserted.volume,
+        }
+        session.execute(stmt.on_duplicate_key_update(update_clause))
 
 
+def getDaliyData(symbol_name: str, start: date | None = None, end: date | None = None) -> pd.DataFrame:
+    """Fetch historical bars for the given symbol."""
+    init_db()
+    engine = get_engine()
+    stmt = _build_price_query(symbol_name, start, end)
+    frame = pd.read_sql(stmt, engine, parse_dates=["datetime"])
+    frame.rename(columns={"adj_close": "adjclose"}, inplace=True)
+    return frame
 
-if __name__=="__main__":
-	testPd()	
-	
 
-#insert2("AAC_Tech", [])
+def _build_price_query(symbol_name: str, start: date | None, end: date | None) -> Select:
+    stmt = (
+        select(
+            DailyPrice.traded_at.label("datetime"),
+            DailyPrice.open,
+            DailyPrice.close,
+            DailyPrice.high,
+            DailyPrice.low,
+            DailyPrice.adj_close,
+            DailyPrice.volume,
+        )
+        .join(Symbol, DailyPrice.symbol_id == Symbol.id)
+        .where(Symbol.symbol == symbol_name)
+        .order_by(DailyPrice.traded_at)
+    )
+    if start:
+        stmt = stmt.where(DailyPrice.traded_at >= start)
+    if end:
+        stmt = stmt.where(DailyPrice.traded_at <= end)
+    return stmt
 
+
+def _ensure_symbol(session, symbol_name: str) -> Symbol:
+    row = session.scalar(select(Symbol).where(Symbol.symbol == symbol_name))
+    if row:
+        return row
+    row = Symbol(symbol=symbol_name)
+    session.add(row)
+    session.flush()
+    _symbol_cache[symbol_name] = symbol_name
+    return row
+
+
+def _nan_to_none(value):
+    if value is None:
+        return None
+    if pd.isna(value):
+        return None
+    return float(value)
+
+
+def _nan_to_int(value):
+    cleaned = _nan_to_none(value)
+    if cleaned is None:
+        return None
+    return int(cleaned)
