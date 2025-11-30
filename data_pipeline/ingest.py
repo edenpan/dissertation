@@ -25,6 +25,7 @@ class SymbolConfig:
     full_name: str | None = None
     exchange: str | None = None
     currency: str | None = None
+    weight: float | None = None  # 权重（用于指数成分股）
 
     @classmethod
     def from_dict(cls, payload: dict) -> "SymbolConfig":
@@ -35,6 +36,7 @@ class SymbolConfig:
             full_name=payload.get("full_name"),
             exchange=payload.get("exchange"),
             currency=payload.get("currency"),
+            weight=payload.get("weight"),
         )
 
 
@@ -118,7 +120,7 @@ def fetch_and_store(
             if force:
                 _delete_existing_range(session, symbol_row.id, min_date, max_date)
 
-            rows = _upsert_prices(session, symbol_row.id, frame)
+            rows = _upsert_prices(session, symbol_row.id, frame, cfg.symbol)
             summaries.append(
                 SymbolIngestionSummary(
                     symbol=cfg.symbol,
@@ -177,7 +179,7 @@ def _download_history(symbol: str, start: date, end: date) -> pd.DataFrame:
         start=start,
         end=end_exclusive,
         interval="1d",
-        auto_adjust=True,
+        auto_adjust=False,
         progress=False,
         prepost=False,
         threads=False,
@@ -227,14 +229,22 @@ def _delete_existing_range(session, symbol_id: int, start: date, end: date) -> N
     session.execute(stmt)
 
 
-def _upsert_prices(session, symbol_id: int, frame: pd.DataFrame) -> int:
+def _upsert_prices(session, symbol_id: int, frame: pd.DataFrame, symbol: str = None) -> int:
     if frame.empty:
         return 0
+
+    # Get symbol from symbol_id if not provided
+    if symbol is None:
+        from sqlalchemy import select
+        from common.db import Symbol
+        symbol_row = session.scalar(select(Symbol).where(Symbol.id == symbol_id))
+        symbol = symbol_row.symbol if symbol_row else ""
 
     payload = []
     for row in frame.itertuples(index=False):
         payload.append(
             {
+                "symbol": symbol,
                 "symbol_id": symbol_id,
                 "traded_at": row.traded_at,
                 "open": _nan_to_none(row.open),

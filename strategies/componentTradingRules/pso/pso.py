@@ -4,9 +4,15 @@ import random
 from math import sin, sqrt
 from backtest import runbackTest
 import sys
-sys.path.append('../../')
-sys.path.append('../')
-import utils
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+grandparent_dir = os.path.dirname(parent_dir)
+root_dir = os.path.dirname(grandparent_dir)
+sys.path.append(parent_dir)
+sys.path.append(grandparent_dir)
+sys.path.append(root_dir)
+import strategies.utils as utils
 import copy
 import importlib
 
@@ -95,13 +101,17 @@ class ParticleSwarmOp:
 
 		self.setStrategy(strategyName)
 		self.iterMax = 50
+		# Increase iterMax for CombinedStrategy as it has more dimensions
+		if strategyName == 'CombinedStrategy':
+			self.iterMax = 100
 		log.info('max Iterate: ' + str(self.iterMax))
 
 		# self.stockData = utils.getStockDataWithTime(code, stratDate, endDate)
-		try:
-			self.stockData = utils.getStockDataWithTimeFromCSV(code, stratDate, endDate)
-		except FileNotFoundError:
-                    return str(code) + "file not found"
+		# try:
+		# 	self.stockData = utils.getStockDataWithTimeFromCSV(code, stratDate, endDate)
+		# except FileNotFoundError:
+		# 	return str(code) + "file not found"
+		self.stockData = utils.getStockDataWithTime(code, stratDate, endDate)
 		self.initParameters()
 		self.initParticles()
 		# let the first particle be the global best
@@ -292,7 +302,8 @@ if __name__=="__main__":
 	
 	pso = ParticleSwarmOp()
 	# pso.pso( "MacdHistogram")
-	pso.pso( "MovingMomentum", '5','2013-07-13', '2016-12-12')
+	# pso.pso( "MovingMomentum", '5','2013-07-13', '2016-12-12')
+	pso.pso( "CombinedStrategy", '5','2013-07-13', '2016-12-12')
 	# pso.pso( "RelativeStrengthIndex")
 	# pso.pso( "MovingAverage")
 	# pso.pso( "MovingAveConvergeDiver")

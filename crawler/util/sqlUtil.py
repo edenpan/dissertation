@@ -51,6 +51,7 @@ def insertPd(symbol_name: str, pdRecord: pd.DataFrame | None) -> None:
         for row in frame.itertuples(index=False):
             payload.append(
                 {
+                    "symbol": symbol_name,
                     "symbol_id": symbol_row.id,
                     "traded_at": row.datetime,
                     "open": _nan_to_none(row.open),
@@ -84,6 +85,9 @@ def getDaliyData(symbol_name: str, start: date | None = None, end: date | None =
     stmt = _build_price_query(symbol_name, start, end)
     frame = pd.read_sql(stmt, engine, parse_dates=["datetime"])
     frame.rename(columns={"adj_close": "adjclose"}, inplace=True)
+    # If adjclose is missing or NaN, fallback to close
+    if "adjclose" in frame.columns and "close" in frame.columns:
+        frame["adjclose"] = frame["adjclose"].fillna(frame["close"])
     return frame
 
 
@@ -92,14 +96,13 @@ def _build_price_query(symbol_name: str, start: date | None, end: date | None) -
         select(
             DailyPrice.traded_at.label("datetime"),
             DailyPrice.open,
-            DailyPrice.close,
             DailyPrice.high,
             DailyPrice.low,
+            DailyPrice.close,
             DailyPrice.adj_close,
             DailyPrice.volume,
         )
-        .join(Symbol, DailyPrice.symbol_id == Symbol.id)
-        .where(Symbol.symbol == symbol_name)
+        .where(DailyPrice.symbol == symbol_name)
         .order_by(DailyPrice.traded_at)
     )
     if start:

@@ -8,8 +8,8 @@
 # to call the real implement strategy?
 import importlib
 import sys
-sys.path.append('../../')
-import utils
+sys.path.append('../../../')
+import strategies.utils as utils
 from datetime import timedelta  
 import pandas as pd
 

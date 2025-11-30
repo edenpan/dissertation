@@ -51,12 +51,27 @@ def _load_nasdaq100() -> List[SymbolConfig]:
         if not ticker:
             continue
         company = str(row["Company"]).strip()
+        
+        # 尝试获取权重信息（如果表格中有）
+        weight = None
+        if "Weight" in table.columns or "Weighting" in table.columns:
+            weight_col = "Weight" if "Weight" in table.columns else "Weighting"
+            try:
+                weight_val = row[weight_col]
+                if pd.notna(weight_val):
+                    # 处理百分比格式（如 "10.5%" 或 "10.5"）
+                    weight_str = str(weight_val).strip().replace("%", "")
+                    weight = float(weight_str)
+            except (ValueError, TypeError):
+                logger.warning(f"Could not parse weight for {ticker}: {row.get(weight_col)}")
+        
         configs.append(
             SymbolConfig(
                 symbol=ticker,
                 full_name=company or ticker,
                 exchange="NASDAQ",
                 currency="USD",
+                weight=weight,
             )
         )
     if not configs:
