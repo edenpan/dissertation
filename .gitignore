@@ -45,3 +45,8 @@ out/
 *.iml
 # ignore the crawl data
 crawler/data
+
+# Python virtual envs (B 线 zipline 回测专用,独立于 dissertation 主依赖)
+.venv*/
+venv/
+__pycache__/

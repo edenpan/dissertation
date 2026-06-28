@@ -1,0 +1,14 @@
+# B 线回测环境(zipline-reloaded)—— 独立于 dissertation 主依赖
+# (主 requirements.txt 是 Flask/crawler stack,二者不混装,各用各的 venv)
+# 选型依据:../B-line-backtest-framework-comparison.md (v0.2,主引擎 = zipline-reloaded)
+#
+# 重建步骤:
+#   cd dissertation
+#   uv venv .venv-zipline --python 3.11
+#   source .venv-zipline/bin/activate
+#   uv pip install -r requirements-zipline.txt
+#
+# 已验证(2026-06-29):Python 3.11.15 · zipline 3.1.1 · pandas 2.3.3 · numpy 2.4.6 · exchange_calendars 4.13.2
+
+zipline-reloaded==3.1.1
+yfinance>=1.4          # 灌美股日线 → zipline custom bundle(下一步)
