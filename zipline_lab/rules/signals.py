@@ -375,6 +375,285 @@ def sma8_signal(
     return sig.astype(int)
 
 
+# ===========================================================================
+# 第三批(最后一批)迁移:macd_hist / obv / range_breakout / ma_cross / weighted
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# 7) MACD 柱状图转向 —— MacdHistogram.py
+# ---------------------------------------------------------------------------
+def macd_hist_signal(prices: pd.DataFrame, *, nl: int = 26, ns: int = 12, t: int = 9) -> pd.Series:
+    """MACD 柱状图(histogram)符号翻转判据 —— **与已迁 `macd` 是两个不同规则**。
+
+    旧文件:strategies/componentTradingRules/MacdHistogram.py
+    (对应 stockcharts.com moving_momentum 的 MACD-histogram 分量;与 MovingMomentum.py
+     的 diverse 计算同源,但 MacdHistogram 只用「柱翻向」一条,不叠加趋势/随机确认。)
+
+    与已迁 `macd`(MovingAveConvergeDiver.py)的区别 —— 务必分清:
+      - `macd`      = 双 EMA **相对位置**的状态:smas>smal → +1(短 EMA 在长 EMA 上方)。
+                       是「快慢线谁在上」的持续状态。
+      - `macd_hist` = MACD 线与其**信号线(signal line)之差**(即柱状图 diverse)的**符号翻转事件**:
+                       柱由负转正 → +1、由正转负 → -1。是「柱状图过零」的动量加速判据。
+      用户旧论文里「MACD 不错」的记忆很可能来自本规则(柱翻向),而非单纯的 EMA 交叉。
+
+    旧计算(calculate() 逐行照搬):
+        smal = EMA(adjclose, span=nl, min_periods=0, adjust=False, ignore_na=False)   # 长
+        smas = EMA(adjclose, span=ns, min_periods=0, adjust=False, ignore_na=False)   # 短(ns<nl)
+        macd = smal - smas          # ★ 长-短(与标准 MACD=快-慢 反号!),照旧不改
+        signalLine = macd.ewm(span=t).mean()    # ★ adjust 默认 True(旧未写 adjust=False)
+        diverse    = macd - signalLine           # MACD 柱状图(histogram)
+        prediverse = diverse.shift(-1)           # ★ 见下「未来函数 bug」
+        # 旧 calculate() 还算了 buy=smas>smal / sell=smas<smal,但 score() **完全没用**它们
+        # (score 只读 prediverse/diverse),故本迁移忽略这两列死代码。
+    旧 score(row):
+        if isnan(prediverse) or isnan(diverse): return 0
+        if prediverse < 0 and diverse > 0: return +1     # 柱由负→正(注释:from negative to positive)
+        if prediverse > 0 and diverse < 0: return -1     # 柱由正→负
+        return 0
+    旧参数:nl(长)、ns(短)、t(MACD 的 t 日 EMA=信号线跨度)。defaultParam 活动网格
+        ns=range(8,21)、nl=range(24,40,2)、t=range(8,15);注释掉的单值有两组
+        (ns=12/nl=26/t=9 与 ns=8/nl=32/t=8)。取教科书 + 第一组单值 nl=26,ns=12,t=9 作默认
+        (网格无唯一默认,属迁移取值选择)。
+
+    ★旧代码 sign-convention 量:macd=长-短 = -(标准 MACD)⇒ 柱=-（标准柱）⇒ 本规则的
+      「柱负→正买入」实际对应**标准 MACD 柱由正→负**(教科书里偏空信号)。即本规则买卖方向
+      与标准 MACD-柱解读相反。此为旧代码 sign 约定使然(与 momentum_rule 同源同 quirk),
+      照旧保留、如实标注,不做「修正」。
+
+    ★★旧代码严重 bug(未来函数)—— 本迁移**未照抄,改 trailing-safe 并高声标注**:
+      旧 `prediverse = diverse.shift(-1)` 取**下一交易日(t+1)**的柱值 = 明确未来函数(lookahead),
+      且方向也与文件注释「柱由负转正」相反(注释意图 = 昨日<0 且 今日>0 = shift(+1))。
+      与 momentum_rule 里同一处 bug 一模一样(双重错:未来函数 + 方向反)。本框架硬规则禁未来
+      函数,且此为确凿 bug(非语义歧义),故按其书面意图迁为 prediverse = diverse.shift(+1)(昨日柱)。
+      这是本批唯一偏离旧代码字面行为处(与第一批 momentum_rule 同性质),特此显式声明供人核。
+
+    信号语义:-1/0/1 事件型(柱过零);多数 bar 为 0(仅在符号翻转日触发)。
+    EMA min_periods=0 ⇒ 无强制 warm-up(MIN_WINDOW=1);bar0 因 prediverse=NaN 自然为 0。
+    EMA 递归 ⇒ last 值依赖全历史,trailing 取数须给足 _EMA_BUFFER(见 lookback_bars)。
+    """
+    nl = int(nl); ns = int(ns); t = int(t)
+    close = prices["close"].astype(float)
+    smal = close.ewm(span=nl, adjust=False, min_periods=0, ignore_na=False).mean()  # 长
+    smas = close.ewm(span=ns, adjust=False, min_periods=0, ignore_na=False).mean()  # 短
+    macd = smal - smas                       # ★ 长-短,照旧(反号于标准 MACD)
+    signal_line = macd.ewm(span=t).mean()    # adjust 默认 True,同旧
+    diverse = macd - signal_line
+    prediverse = diverse.shift(1)            # ★ 旧为 shift(-1)(未来函数 bug),按意图改 +1
+    sig = pd.Series(0, index=prices.index, dtype=int)
+    buy = (prediverse < 0) & (diverse > 0)
+    sell = (prediverse > 0) & (diverse < 0)  # NaN 参与比较→False→自然落 0(等价旧 isnan 守卫)
+    sig = sig.mask(buy, 1).mask(sell, -1)
+    return sig.astype(int)
+
+
+# ---------------------------------------------------------------------------
+# 8) 「OnBalanceVolAve」—— OnBalanceVolAve.py（★实为成交量双 SMA 交叉,非累计 OBV,见下）
+# ---------------------------------------------------------------------------
+def obv_signal(prices: pd.DataFrame, *, nl: int = 50, ns: int = 10) -> pd.Series:
+    """成交量(volume)双 SMA 交叉判据 —— **文件名叫 OBV,但实现里没有任何累计 OBV**。
+
+    旧文件:strategies/componentTradingRules/OnBalanceVolAve.py
+    ★★命名 vs 实现的重大出入(如实标注,本迁移忠于**实现**,不擅自补真 OBV):
+      文件名/注释自称 "On-Balance Volume Average",但**代码逻辑**是(run() 逐行):
+          smal = volume.rolling(nl).mean()     # 长周期成交量 SMA
+          smas = volume.rolling(ns).mean()     # 短周期成交量 SMA(ns<nl)
+          buy  = smas > smal ; sell = smas < smal
+      文件注释自己也写明「OBVA is the same as MA except that OBVA calculates moving average
+      with stock volume instead of stock price」——即**只是把 MovingAverage 的价格换成成交量**,
+      而非标准 OBV(标准 OBV = 按涨跌方向对成交量做**自起点累计**的能量线,再取其均线)。
+      故本规则:
+        · **不是** path-dependent,**不进 _STATEFUL**(有限 rolling 窗即可精确复现,parity 可逐日等);
+        · 与 ma_cross 结构完全相同,仅数据列 close→volume。
+      全仓库(含旧 strategies/)grep 无任何 cumsum/累计 OBV 实现 —— 真 OBV 从未被写过。
+      ⇒ 若日后要「真·OBV 能量潮」,那是**新规则**(需新写累计线,届时才 _STATEFUL),
+         不属本次「迁移」范畴。此处特意留证,交用户裁决是否另立新规则。
+
+    旧 score(row):
+        if isnan(smas) or isnan(smal): return 0
+        if buy:  return +1     # 短量均线在长量均线上方(放量趋势)
+        if sell: return -1
+        return 0
+    旧参数:nl(长)、ns(短);defaultParam 网格 nl=range(5,250,5)、ns=range(1,10)+range(15,200,5)。
+        取 nl=50,ns=10 作默认(网格无唯一默认,迁移取值选择;checkParams 要求 nl>ns,满足)。
+
+    信号语义:-1/0/1 状态(量能短/长均线相对位置)。有限窗,MIN_WINDOW=max(nl,ns)=nl。
+    """
+    nl = int(nl); ns = int(ns)
+    vol = prices["volume"].astype(float)
+    sig = pd.Series(0, index=prices.index, dtype=int)
+    if len(vol) < nl:
+        return sig
+    smal = vol.rolling(nl).mean()   # 长
+    smas = vol.rolling(ns).mean()   # 短
+    sig = sig.mask(smas > smal, 1).mask(smas < smal, -1)
+    sig.iloc[: nl - 1] = 0          # rolling(nl) 未满段强制 0(旧 warm-up)
+    return sig.astype(int)
+
+
+# ---------------------------------------------------------------------------
+# 9) 区间突破 —— tradingRangeBreakout.py
+# ---------------------------------------------------------------------------
+def range_breakout_signal(prices: pd.DataFrame, *, n: int = 20) -> pd.Series:
+    """n 日区间突破(今日收盘触及 n 日最高/最低)。
+
+    旧文件:strategies/componentTradingRules/tradingRangeBreakout.py
+    旧 run():
+        highest = adjclose.rolling(n).max()      # ★ 含当日的 n 根窗口(见下与注释的出入)
+        lowest  = adjclose.rolling(n).min()
+    旧 score(row):
+        if (highest==np.nan) or (lowest==np.nan): return 0   # 死代码,x==np.nan 恒 False(同 bollinger)
+        if adjclose == highest: return +1        # 今日收盘 == 窗口最高 → 买(创新高)
+        if adjclose == lowest:  return -1        # 今日收盘 == 窗口最低 → 卖(创新低)
+        return 0
+    旧参数:n(回看天数),defaultParam=range(10,255)。取 n=20 作默认(迷你 Donchian,
+        网格无唯一默认,迁移取值选择;checkParams 要求 n>1)。
+
+    ★旧代码 注释 vs 实现 的出入(如实标注,照**实现**迁移):
+      文件头注释写 Ht,n = max(p_{t-1},...,p_{t-n}) = **前 n 天(不含今日)**的最高,买入判据 pt>Ht,n
+      (严格大于、且不含今日)。但**实现**用 rolling(n).max()(**含当日**),再判 adjclose==highest
+      (相等,非严格 >)。二者不同:实现是「今日收盘 = 含今日的 n 日窗口内最高」= 今日创 n 日新高。
+      本迁移照实现(含今日 rolling + 相等判据),不按注释加 shift(1)/改严格 >。
+      浮点相等安全性:rolling(n).max() 含今日,今日恰为窗口最大时,highest 就是今日那个元素本身
+      (同一浮点值,无舍入)⇒ `adjclose==highest` 精确成立,不存在浮点比较陷阱。
+      同 bollinger:score 首行 NaN 守卫是死代码;但 warm-up 段 highest/lowest 为 NaN,
+      `adjclose==NaN` 恒 False → 自然落 0,行为无差异,再以 MIN_WINDOW 显式挡。
+
+    信号语义:-1/0/1 事件(创新高/新低日);震荡段可能同一根既非最高也非最低 → 0。
+    注:若某窗口内今日既是最高又是最低(全窗等值,极罕见),buy 先判 → 记 +1(照旧 score 顺序)。
+    有限窗,MIN_WINDOW=n。
+    """
+    n = int(n)
+    close = prices["close"].astype(float)
+    sig = pd.Series(0, index=prices.index, dtype=int)
+    if len(close) < n:
+        return sig
+    highest = close.rolling(n).max()   # 含当日
+    lowest = close.rolling(n).min()
+    is_high = close == highest         # 精确相等(highest 含今日,见 docstring)
+    is_low = close == lowest
+    # 旧 score 顺序:先判 highest(买),再判 lowest(卖);故 buy 优先(mask 顺序保证)
+    sig = sig.mask(is_low, -1).mask(is_high, 1)
+    sig.iloc[: n - 1] = 0              # rolling(n) 未满段强制 0(NaN==x 已为 False,再显式挡)
+    return sig.astype(int)
+
+
+# ---------------------------------------------------------------------------
+# 10) 价格双 SMA 交叉 —— MovingAverage.py(与 sma_crossover.py 的 long/flat 等价)
+# ---------------------------------------------------------------------------
+def ma_cross_signal(prices: pd.DataFrame, *, nl: int = 50, ns: int = 20) -> pd.Series:
+    """价格双 SMA 交叉:短 SMA 在长 SMA 上方 → +1、下方 → -1。
+
+    旧文件:strategies/componentTradingRules/MovingAverage.py
+    旧 calculate()/score()(逐行照搬):
+        smal = adjclose.rolling(nl).mean()   # 长
+        smas = adjclose.rolling(ns).mean()   # 短(ns<nl)
+        buy  = smas > smal ; sell = smas < smal
+        if isnan(smas) or isnan(smal): return 0
+        if buy:  return +1
+        if sell: return -1
+        return 0
+    旧参数:nl(长)、ns(短);defaultParam 网格 nl=range(15,255,5)、ns=range(1,10)+range(10,200,5)。
+        取 nl=50,ns=20 作默认(对齐 sma_crossover.py 的 long=50/short=20 便于对照;
+        网格无唯一默认,迁移取值选择;checkParams 要求 nl>ns)。
+
+    与 zipline_lab/sma_crossover.py 的**等价关系**(参数映射 + 取舍):
+      sma_crossover(短=short_window, 长=long_window)口径:sig = int(short_ma > long_ma) ∈ {0,1}
+      (只 long/flat,无做空),前 long_window-1 天强制 0。
+      本 ma_cross 与之**在 long/flat 下单口径下逐日等价**,映射:ns ↔ short_window、nl ↔ long_window。
+        · 判据同为 short_ma>long_ma;相等(==)两者都落 0(sma_crossover 的 int(>) 与本 mask 都不置 1);
+        · warm-up 同为「长窗未满 → 0」(sma_crossover 用 bar 门闩,本函数用 iloc 前置 0);
+        · **唯一差异**:本 ma_cross 在 short<long 时输出 **-1**(sma_crossover 输出 0)。此差异
+          仅当 allow_short=True 才显现;rule_factory 默认 long/flat 会把 -1→0,故与 sma_crossover 恒等。
+      结论:两者非同一函数(-1 vs 0 的原始三态不同),但在旧论文/本框架默认的 long/flat 口径下
+      完全等价,可互为回归对照。保留独立 ma_cross 是为忠实旧规则的三态语义(-1 可被 allow_short 激活)。
+      注:sma_crossover 用 data.history 的 "price"(=adj_close),本函数用 close(bundle 已 close≡adj_close),口径一致。
+
+    信号语义:-1/0/1 状态(短/长 SMA 相对位置)。有限窗,MIN_WINDOW=nl。
+    """
+    nl = int(nl); ns = int(ns)
+    close = prices["close"].astype(float)
+    sig = pd.Series(0, index=prices.index, dtype=int)
+    if len(close) < nl:
+        return sig
+    smal = close.rolling(nl).mean()   # 长
+    smas = close.rolling(ns).mean()   # 短
+    sig = sig.mask(smas > smal, 1).mask(smas < smal, -1)
+    sig.iloc[: nl - 1] = 0            # 长窗未满段强制 0(旧 warm-up)
+    return sig.astype(int)
+
+
+# ---------------------------------------------------------------------------
+# 11) 多规则加权合成 —— WeightAdjRule.py(旧为未完成 stub,按其书面意图重写)
+# ---------------------------------------------------------------------------
+def _weighted_member_params(params: dict) -> dict:
+    """weighted 的成员参数覆写表({rule_name: {param overrides}}),缺省 {}。"""
+    return dict((params or {}).get("member_params") or {})
+
+
+def _member_merged_params(member: str, member_params: dict) -> dict:
+    """某成员规则的完整参数 = 其 DEFAULT_PARAMS 叠加 member_params 覆写。"""
+    merged = dict(DEFAULT_PARAMS[member])
+    merged.update((member_params or {}).get(member, {}))
+    return merged
+
+
+def weighted_signal(
+    prices: pd.DataFrame,
+    *,
+    weights: dict | None = None,
+    threshold: float = 0.0,
+    member_params: dict | None = None,
+) -> pd.Series:
+    """多分量规则加权合成:Σ w_i·signal_i,按 Σ|w| 归一后过对称阈值 → -1/0/1。
+
+    旧文件:strategies/componentTradingRules/WeightAdjRule.py
+    ★旧代码状态(如实标注):**未完成的 stub**。它:
+        · InitalWt(220) 生成 220 个等权 1/220;
+        · 声称「按过去 ms 期表现动态调整各分量规则权重」(PRS = 分量规则组合的表现加权);
+        · 但函数体只 import 了不存在的 bb/utils,循环里全是 `print(invest)`,**从未真正合成出信号**,
+          也**从未实现**那套「按 ms 期表现调权」的动态逻辑。即:旧文件只有意图与骨架,无可运行合成。
+    因此本迁移**不是照抄**(无可抄的合成实现),而是按其**书面意图**(header 的 Input=当日+规则权重,
+      Output=更新后权重;body 想做的是「各分量规则打分 → 加权 → 出组合信号」)落一个干净的**静态加权**实现:
+
+    新实现语义:
+        weights = {rule_name: weight}(调 SIGNAL_FUNCS 已登记规则;成员参数走 member_params 覆写,缺省各自 DEFAULT_PARAMS)
+        combined = Σ_i weight_i · signal_i(prices) ,  signal_i ∈ {-1,0,1}
+        combined /= Σ_i |weight_i|            # 归一到 [-1,1](对齐旧 InitalWt 的等权归一精神)
+        signal = +1 if combined >  threshold
+               = -1 if combined < -threshold
+               =  0 otherwise                 # 对称阈值,threshold∈[0,1) 造中性死区
+    与旧实现的**取舍**(如实交代):
+      (a) 旧「按过去 ms 期表现动态调权」未实现 ⇒ 本函数取**静态权重**(由调用方/walk-forward/PSO 外层
+          依历史表现设定后传入),不在信号函数内做前视式的表现回看(那会引入 look-ahead,违本框架硬规则)。
+          即把「调权」职责上移到研究外层,信号层只做纯 trailing 的加权合成。
+      (b) 归一用 Σ|w|(旧等权隐含归一到 1);threshold 默认 0.0 = 取加权和符号(多数决)。
+      (c) 成员各自 trailing-safe 且 parity 成立 ⇒ 逐点加权+定阈 = 逐点函数 ⇒ weighted 自身 parity 亦成立
+          (per-bar 取数窗取所有成员 lookback 的 max,保证每个成员都被精确复现;见 lookback_bars 特判)。
+
+    ★_STATEFUL 传染:任一成员 ∈ _STATEFUL(如 sma8)⇒ weighted 自身按 stateful 处理(取数用全段扩张窗,
+      见 is_stateful / lookback_bars 的 weighted 分支)。默认成员(macd/bollinger/stochastic)皆有限窗 ⇒
+      默认 weighted **非** stateful。
+
+    默认组合(DEFAULT_PARAMS):{macd:1, bollinger:1, stochastic:1} 等权、threshold=0.0(3 成员做冒烟/parity)。
+
+    信号语义:-1/0/1;稀疏度取决于成员与阈值。
+    """
+    weights = dict(weights or DEFAULT_PARAMS["weighted"]["weights"])
+    member_params = dict(member_params or {})
+    idx = prices.index
+    combined = pd.Series(0.0, index=idx)
+    total_w = sum(abs(float(w)) for w in weights.values())
+    for member, w in weights.items():
+        s = compute_signal(member, prices, member_params.get(member, {})).astype(float)
+        combined = combined + float(w) * s
+    if total_w > 0:
+        combined = combined / total_w   # 归一到 [-1,1]
+    thr = float(threshold)
+    sig = pd.Series(0, index=idx, dtype=int)
+    sig = sig.mask(combined > thr, 1).mask(combined < -thr, -1)
+    return sig.astype(int)
+
+
 # ---------------------------------------------------------------------------
 # 注册表 + MIN_WINDOW + 供 rule_factory 用的取数窗口长度
 # ---------------------------------------------------------------------------
@@ -385,6 +664,11 @@ SIGNAL_FUNCS = {
     "stochastic": stochastic_signal,
     "momentum_rule": momentum_rule_signal,
     "sma8": sma8_signal,
+    "macd_hist": macd_hist_signal,
+    "obv": obv_signal,
+    "range_breakout": range_breakout_signal,
+    "ma_cross": ma_cross_signal,
+    "weighted": weighted_signal,
 }
 
 DEFAULT_PARAMS = {
@@ -397,6 +681,16 @@ DEFAULT_PARAMS = {
         sto_n=3, sto_m=7, sto_ob=75, sto_os=25,
     ),
     "sma8": dict(t1=5, t2=120, t3=60, t4=200, t5=5, t6=120, t7=60, t8=200),
+    "macd_hist": dict(nl=26, ns=12, t=9),
+    "obv": dict(nl=50, ns=10),
+    "range_breakout": dict(n=20),
+    "ma_cross": dict(nl=50, ns=20),
+    # weighted:默认 3 成员等权 + 阈值 0(多数决);成员各用自己的 DEFAULT_PARAMS
+    "weighted": dict(
+        weights={"macd": 1.0, "bollinger": 1.0, "stochastic": 1.0},
+        threshold=0.0,
+        member_params={},
+    ),
 }
 
 # 每规则:给定 params 返回「信号自第几根 bar(1-based)起有效」= 前 MIN_WINDOW-1 根强制 0。
@@ -417,12 +711,27 @@ MIN_WINDOW = {
         int(p.get("t4", 200)), int(p.get("t5", 5)), int(p.get("t6", 120)),
         int(p.get("t7", 60)), int(p.get("t8", 200)),
     ),
+    # 纯 EMA(min_periods=0)自 bar1 出信号,bar0 因 prediverse=NaN 自然为 0 → 同 macd,门 1
+    "macd_hist": lambda p: 1,
+    # 成交量双 SMA:长窗就绪即可(有限窗)
+    "obv": lambda p: max(int(p.get("nl", 50)), int(p.get("ns", 10))),
+    "range_breakout": lambda p: int(p.get("n", 20)),
+    "ma_cross": lambda p: max(int(p.get("nl", 50)), int(p.get("ns", 20))),
+    # weighted:所有成员 MIN_WINDOW 的 max(成员各用其 DEFAULT_PARAMS 叠加 member_params)
+    "weighted": lambda p: max(
+        (
+            MIN_WINDOW[m](_member_merged_params(m, _weighted_member_params(p)))
+            for m in (p.get("weights") or DEFAULT_PARAMS["weighted"]["weights"])
+        ),
+        default=1,
+    ),
 }
 
 # EMA 类规则的 last 值依赖全历史(递归),trailing 窗口须给足缓冲让 seed 衰减到不翻整数信号;
 # 有限窗规则(rolling)last 值只依赖窗口内 MIN_WINDOW 根,缓冲无关正确性(给点余量即可)。
-_EMA_BUFFER = 300   # macd / momentum_rule 的 EMA seed 衰减缓冲
-_FINITE_BUFFER = 5  # bollinger / rsi / stochastic
+_EMA_BUFFER = 300   # macd / momentum_rule / macd_hist 的 EMA seed 衰减缓冲
+_FINITE_BUFFER = 5  # bollinger / rsi / stochastic / obv / range_breakout / ma_cross
+_EMA_RULES = ("macd", "momentum_rule", "macd_hist")  # last 值依赖全历史(递归 EMA)
 
 # ★状态机规则(sma8):仓位状态 path-dependent(见 sma8_signal docstring),固定 trailing
 #   窗口会截断更早的进/出场触发而错判状态 ⇒ 必须用「全段扩张窗口」。用一个大到吃满任何回测
@@ -433,16 +742,43 @@ _STATEFUL = {"sma8"}
 _FULL_SEGMENT = 1_000_000_000
 
 
+def is_stateful(rule_name: str, params: dict | None = None) -> bool:
+    """规则(给定 params)是否 path-dependent(需全段扩张窗口重放)。
+
+    sma8 恒 stateful;weighted 当**任一成员** stateful 时传染为 stateful;其余否。
+    供 test_parity 的取数/显示与 lookback_bars 共用同一判据,避免 `rule in _STATEFUL` 漏掉 weighted。
+    """
+    if rule_name in _STATEFUL:
+        return True
+    if rule_name == "weighted":
+        p = params or {}
+        weights = p.get("weights") or DEFAULT_PARAMS["weighted"]["weights"]
+        mp = _weighted_member_params(p)
+        return any(is_stateful(m, _member_merged_params(m, mp)) for m in weights)
+    return False
+
+
 def lookback_bars(rule_name: str, params: dict) -> int:
     """rule_factory / test_parity 每 bar 取数(以及逐 bar 模拟)用的 trailing 窗口长度。
 
     有限窗/EMA 规则 = MIN_WINDOW(params) + 缓冲(EMA 类给大缓冲);
-    状态机规则(sma8)= 全段哨兵(_FULL_SEGMENT),强制扩张窗口重放(见上注)。
+    状态机规则(sma8,或含 stateful 成员的 weighted)= 全段哨兵(_FULL_SEGMENT),强制扩张窗口重放;
+    weighted(全有限成员)= 所有成员 lookback 的 max(保证每个成员都被精确复现 → weighted parity 成立)。
     """
+    if rule_name == "weighted":
+        p = params or {}
+        weights = p.get("weights") or DEFAULT_PARAMS["weighted"]["weights"]
+        mp = _weighted_member_params(p)
+        if any(is_stateful(m, _member_merged_params(m, mp)) for m in weights):
+            return _FULL_SEGMENT
+        return max(
+            (lookback_bars(m, _member_merged_params(m, mp)) for m in weights),
+            default=_FINITE_BUFFER,
+        )
     if rule_name in _STATEFUL:
         return _FULL_SEGMENT
     mw = MIN_WINDOW[rule_name](params)
-    buf = _EMA_BUFFER if rule_name in ("macd", "momentum_rule") else _FINITE_BUFFER
+    buf = _EMA_BUFFER if rule_name in _EMA_RULES else _FINITE_BUFFER
     return int(mw + buf)
 
 
