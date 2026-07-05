@@ -50,3 +50,6 @@ crawler/data
 .venv*/
 venv/
 __pycache__/
+
+# 本地 DB 凭据(样板见 zipline_lab/env.example)
+.env

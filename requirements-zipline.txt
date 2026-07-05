@@ -11,4 +11,6 @@
 # 已验证(2026-06-29):Python 3.11.15 · zipline 3.1.1 · pandas 2.3.3 · numpy 2.4.6 · exchange_calendars 4.13.2
 
 zipline-reloaded==3.1.1
-yfinance>=1.4          # 灌美股日线 → zipline custom bundle(下一步)
+yfinance>=1.4          # 后续增量补数用(bundle 数据源已改为 stockdb,见 zipline_lab/bundle_stockdb.py)
+sqlalchemy>=2.0        # bundle 只读 stockdb.daily_prices(裸 SQL,不走 common.db ORM)
+pymysql>=1.1
