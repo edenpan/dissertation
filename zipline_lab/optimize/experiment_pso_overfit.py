@@ -134,10 +134,14 @@ def optimize_one(method: str, objective, seeds: list, iters: int) -> Champion:
 
 
 def zipline_recheck(ticker: str, params: dict, pre_is_total: float,
-                    is_start: str, is_end: str) -> dict:
-    """champion 参数走 rule_factory zipline 跑 IS,比对预筛 vs zipline 总收益(bp)。"""
+                    is_start: str, is_end: str,
+                    *, bundle: str = "stockdb", calendar: str = "XNYS") -> dict:
+    """champion 参数走 rule_factory zipline 跑 IS,比对预筛 vs zipline 总收益(bp)。
+
+    bundle/calendar 默认美股(stockdb/XNYS);港股传 stockdb-hk / XHKG。
+    """
     perf = run_rule_zipline("sma8", ticker, is_start, is_end, params=dict(params),
-                            capital=10_000.0, bundle="stockdb")
+                            capital=10_000.0, bundle=bundle, calendar_name=calendar)
     zip_total = fitness(perf)
     diff_bp = (zip_total - pre_is_total) * 1e4
     return dict(zip_total=zip_total, diff_bp=diff_bp, warn=abs(diff_bp) > WARN_BP)
@@ -147,14 +151,22 @@ def _pct(x: float) -> str:
     return f"{x * 100:.2f}%"
 
 
-def run(iters: int, is_start: str, is_end: str, oos_start: str, oos_end: str) -> Path:
+def run(iters: int, is_start: str, is_end: str, oos_start: str, oos_end: str,
+        *, tickers: list | None = None, bundle: str = "stockdb", calendar: str = "XNYS",
+        report_name: str = "pso_vs_random_overfit.md", market_label: str = "美股"):
+    """默认参数即原美股实验(TICKERS/stockdb/XNYS,写 pso_vs_random_overfit.md)。
+
+    港股实验传 tickers=港股列表, bundle='stockdb-hk', calendar='XHKG', report_name/market_label。
+    返回 (报告路径, per_ticker 数据字典)。
+    """
+    tickers = tickers if tickers is not None else TICKERS
     t_start = time.time()
     per_ticker: dict[str, dict] = {}
 
-    for tk in TICKERS:
+    for tk in tickers:
         print(f"\n[exp] ===== {tk} =====")
-        close_is = bundle_close(tk, _d(is_start), _d(is_end))
-        close_oos = bundle_close(tk, _d(oos_start), _d(oos_end))
+        close_is = bundle_close(tk, _d(is_start), _d(is_end), bundle=bundle, calendar=calendar)
+        close_oos = bundle_close(tk, _d(oos_start), _d(oos_end), bundle=bundle, calendar=calendar)
         objective = _make_objective(close_is)
 
         # ① PSO ② 随机(同预算,3 seed) ---------------------------------
@@ -185,8 +197,10 @@ def run(iters: int, is_start: str, is_end: str, oos_start: str, oos_end: str) ->
 
         # zipline 复核(PSO / 随机 champion) ---------------------------
         print(f"[exp] {tk} zipline 复核 PSO/Random champion (IS)...")
-        pso_rc = zipline_recheck(tk, pso_champ.params, pso_is.total, is_start, is_end)
-        rnd_rc = zipline_recheck(tk, rnd_champ.params, rnd_is.total, is_start, is_end)
+        pso_rc = zipline_recheck(tk, pso_champ.params, pso_is.total, is_start, is_end,
+                                 bundle=bundle, calendar=calendar)
+        rnd_rc = zipline_recheck(tk, rnd_champ.params, rnd_is.total, is_start, is_end,
+                                 bundle=bundle, calendar=calendar)
         print(f"[exp] {tk} PSO 复核 diff={pso_rc['diff_bp']:+.1f}bp  "
               f"RND 复核 diff={rnd_rc['diff_bp']:+.1f}bp")
 
@@ -198,9 +212,10 @@ def run(iters: int, is_start: str, is_end: str, oos_start: str, oos_end: str) ->
         )
 
     path = _write_report(per_ticker, iters, is_start, is_end, oos_start, oos_end,
-                         time.time() - t_start)
+                         time.time() - t_start, tickers=tickers, bundle=bundle,
+                         report_name=report_name, market_label=market_label)
     print(f"\n[exp] 报告 → {path}  (总耗时 {time.time()-t_start:.0f}s)")
-    return path
+    return path, per_ticker
 
 
 def _decay_note(is_sharpe: float, oos_sharpe: float) -> str:
@@ -208,12 +223,15 @@ def _decay_note(is_sharpe: float, oos_sharpe: float) -> str:
     return f"{d:+.3f}"
 
 
-def _write_report(per_ticker, iters, is_start, is_end, oos_start, oos_end, elapsed) -> Path:
+def _write_report(per_ticker, iters, is_start, is_end, oos_start, oos_end, elapsed,
+                  *, tickers=None, bundle: str = "stockdb",
+                  report_name: str = "pso_vs_random_overfit.md", market_label: str = "美股") -> Path:
+    TICKERS = tickers if tickers is not None else globals()["TICKERS"]  # 局部覆盖模块级
     budget = 30 * iters
     L: list[str] = []
     L.append("# PSO vs 随机搜索 vs 朴素基准 vs buy&hold —— sma8 过拟合对照")
     L.append("")
-    L.append(f"- 标的:{', '.join(TICKERS)}(美股;价格取自 bundle `stockdb`,close ≡ adj_close,不连 MySQL)")
+    L.append(f"- 标的:{', '.join(TICKERS)}({market_label};价格取自 bundle `{bundle}`,close ≡ adj_close,不连 MySQL)")
     L.append(f"- 样本内 IS:{is_start} .. {is_end};样本外 OOS:{oos_start} .. {oos_end}(OOS 绝不参与选参)")
     L.append(f"- 规则:sma8 状态机(8 窗口 t1..t8 ∈ [2,200] 整数;买=SMA_t1>t2 且 SMA_t3>t4,"
              f"卖=SMA_t5<t6 且 SMA_t7<t8,否则保持)")
@@ -406,7 +424,7 @@ def _write_report(per_ticker, iters, is_start, is_end, oos_start, oos_end, elaps
     L.append("")
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    path = REPORTS_DIR / "pso_vs_random_overfit.md"
+    path = REPORTS_DIR / report_name
     path.write_text("\n".join(L), encoding="utf-8")
     return path
 
@@ -418,8 +436,16 @@ def main() -> None:
     ap.add_argument("--is-end", default=IS_END)
     ap.add_argument("--oos-start", default=OOS_START)
     ap.add_argument("--oos-end", default=OOS_END)
+    ap.add_argument("--tickers", default=None, help="逗号分隔标的(默认美股 AAPL,MSFT,KO)")
+    ap.add_argument("--bundle", default="stockdb")
+    ap.add_argument("--calendar", default="XNYS")
+    ap.add_argument("--report", default="pso_vs_random_overfit.md")
+    ap.add_argument("--market", default="美股", help="报告用市场标签")
     args = ap.parse_args()
-    run(args.iters, args.is_start, args.is_end, args.oos_start, args.oos_end)
+    tickers = [s.strip() for s in args.tickers.split(",")] if args.tickers else None
+    run(args.iters, args.is_start, args.is_end, args.oos_start, args.oos_end,
+        tickers=tickers, bundle=args.bundle, calendar=args.calendar,
+        report_name=args.report, market_label=args.market)
 
 
 if __name__ == "__main__":

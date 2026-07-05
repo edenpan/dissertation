@@ -36,6 +36,7 @@ zipline-reloaded 3.1.1 已知坑(勿踩):
 """
 from __future__ import annotations
 
+import functools
 import os
 
 import numpy as np
@@ -47,6 +48,11 @@ from zipline.utils.calendar_utils import register_calendar_alias
 
 BUNDLE_NAME = "stockdb"
 EXCHANGE = "STOCKDB"  # 自造交易所名,canonical 指到 XNYS
+
+# 港股增量(2026-07-05):独立 bundle `stockdb-hk`,自造交易所名 STOCKDB_HK → canonical XHKG,
+# 只收 `%.HK`。与美股 bundle 完全隔离(不同 bundle 名/交易所名/日历),故 US 路径 ingest 不受影响。
+BUNDLE_NAME_HK = "stockdb-hk"
+EXCHANGE_HK = "STOCKDB_HK"
 
 
 def _engine() -> sa.Engine:
@@ -62,10 +68,15 @@ def _engine() -> sa.Engine:
     return sa.create_engine(url)
 
 
-def _load_symbols(eng) -> pd.DataFrame:
-    df = pd.read_sql(
-        sa.text("SELECT id, symbol, full_name FROM symbols ORDER BY symbol"), eng
-    )
+def _load_symbols(eng, symbol_like: str | None = None) -> pd.DataFrame:
+    """symbol_like 给出则加 SQL `symbol LIKE :like` 过滤(如 '%.HK');None=全表(美股原行为)。"""
+    sql = "SELECT id, symbol, full_name FROM symbols"
+    params: dict = {}
+    if symbol_like:
+        sql += " WHERE symbol LIKE :like"
+        params["like"] = symbol_like
+    sql += " ORDER BY symbol"
+    df = pd.read_sql(sa.text(sql), eng, params=params)
     only = os.environ.get("STOCKDB_BUNDLE_SYMBOLS")
     if only:
         wanted = {s.strip().upper() for s in only.split(",") if s.strip()}
@@ -87,7 +98,7 @@ def _load_prices(eng, symbol_id: int) -> pd.DataFrame:
     return df[~df.index.duplicated(keep="last")]
 
 
-def stockdb_bundle(
+def _ingest_impl(
     environ,
     asset_db_writer,
     minute_bar_writer,
@@ -99,11 +110,23 @@ def stockdb_bundle(
     cache,
     show_progress,
     output_dir,
+    *,
+    exchange: str = EXCHANGE,
+    canonical: str = "XNYS",
+    country_code: str = "US",
+    symbol_like: str | None = None,
 ):
+    """通用 ingest 内核:美股(symbol_like=None/XNYS)与港股(symbol_like='%.HK'/XHKG)共用。
+
+    exchange/canonical/country_code/symbol_like 皆为带默认值的仅关键字参数,默认即原美股行为
+    (STOCKDB→XNYS→US,全表),故 register_stockdb_bundle 的产出与泛化前逐字节等价。
+    """
     eng = _engine()
-    symbols = _load_symbols(eng)
+    symbols = _load_symbols(eng, symbol_like=symbol_like)
     if symbols.empty:
-        raise ValueError("stockdb.symbols 为空(或 STOCKDB_BUNDLE_SYMBOLS 过滤后无匹配)")
+        raise ValueError(
+            f"stockdb.symbols 为空(symbol_like={symbol_like!r},或 STOCKDB_BUNDLE_SYMBOLS 过滤后无匹配)"
+        )
 
     lo, hi = pd.read_sql(
         sa.text("SELECT MIN(traded_at), MAX(traded_at) FROM daily_prices"), eng
@@ -147,7 +170,7 @@ def stockdb_bundle(
                     end_date=df.index[-1],
                     first_traded=df.index[0],
                     auto_close_date=df.index[-1] + pd.Timedelta(days=1),
-                    exchange=EXCHANGE,
+                    exchange=exchange,
                 )
             )
             yield sid, df[["open", "high", "low", "close", "volume"]]
@@ -156,7 +179,7 @@ def stockdb_bundle(
 
     equities = pd.DataFrame(meta_rows).set_index("sid")
     exchanges = pd.DataFrame(
-        {"exchange": [EXCHANGE], "canonical_name": ["XNYS"], "country_code": ["US"]}
+        {"exchange": [exchange], "canonical_name": [canonical], "country_code": [country_code]}
     )
     asset_db_writer.write(equities=equities, exchanges=exchanges)
 
@@ -169,6 +192,17 @@ def stockdb_bundle(
     )
 
 
+# 美股 ingest 入口:内核默认参数即原行为(STOCKDB/XNYS/US/全表)→ 与泛化前等价。
+stockdb_bundle = functools.partial(
+    _ingest_impl, exchange=EXCHANGE, canonical="XNYS", country_code="US", symbol_like=None
+)
+
+# 港股 ingest 入口:STOCKDB_HK/XHKG/HK,只收 `%.HK`。
+stockdb_hk_bundle = functools.partial(
+    _ingest_impl, exchange=EXCHANGE_HK, canonical="XHKG", country_code="HK", symbol_like="%.HK"
+)
+
+
 def register_stockdb_bundle() -> None:
     """幂等:同进程重复调用不抛(alias 撞名吞掉;register 本身是 dict 覆盖,天然幂等)。"""
     try:
@@ -176,3 +210,12 @@ def register_stockdb_bundle() -> None:
     except CalendarNameCollision:
         pass
     register(BUNDLE_NAME, stockdb_bundle, calendar_name="XNYS")
+
+
+def register_stockdb_hk_bundle() -> None:
+    """注册港股 bundle `stockdb-hk`(XHKG 日历,只收 %.HK)。幂等,同上。"""
+    try:
+        register_calendar_alias(EXCHANGE_HK, "XHKG")
+    except CalendarNameCollision:
+        pass
+    register(BUNDLE_NAME_HK, stockdb_hk_bundle, calendar_name="XHKG")

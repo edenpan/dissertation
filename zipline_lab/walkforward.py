@@ -91,14 +91,19 @@ def _ensure_registered() -> None:
     load_extensions(default=True, extensions=[], strict=True, environ=_os.environ)
 
 
-def bundle_close(symbol: str, start: date, end: date) -> pd.Series:
-    """读 bundle stockdb 的日收盘价序列,index=date(与 align_backtester 同法)。"""
+def bundle_close(
+    symbol: str, start: date, end: date, *, bundle: str = BUNDLE, calendar: str = CALENDAR
+) -> pd.Series:
+    """读 bundle 的日收盘价序列,index=date(与 align_backtester 同法)。
+
+    bundle/calendar 默认 stockdb/XNYS(美股,原行为不变);港股传 bundle='stockdb-hk',calendar='XHKG'。
+    """
     from zipline.data import bundles
     from zipline.utils.calendar_utils import get_calendar
 
     _ensure_registered()
-    bd = bundles.load(BUNDLE)
-    cal = get_calendar(CALENDAR)
+    bd = bundles.load(bundle)
+    cal = get_calendar(calendar)
     sess = cal.sessions_in_range(pd.Timestamp(start), pd.Timestamp(end))
     asset = bd.asset_finder.lookup_symbol(symbol, as_of_date=None)
     arr = bd.equity_daily_bar_reader.load_raw_arrays(

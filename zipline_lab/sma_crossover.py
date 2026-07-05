@@ -69,8 +69,12 @@ def run_sma_zipline(
     long_window: int = 50,
     capital: float = 10_000.0,
     bundle: str = "stockdb",
+    calendar_name: str = "XNYS",
 ):
-    """便捷入口:走 strategy_base.run_strategy 跑 SMA 金叉,返回每日 performance DataFrame。"""
+    """便捷入口:走 strategy_base.run_strategy 跑 SMA 金叉,返回每日 performance DataFrame。
+
+    calendar_name 默认 XNYS(美股,原行为不变);跑港股 bundle `stockdb-hk` 时传 "XHKG"。
+    """
     params = {
         "ticker": ticker,
         "short_window": short_window,
@@ -83,4 +87,5 @@ def run_sma_zipline(
         end=end,
         capital=capital,
         bundle=bundle,
+        calendar_name=calendar_name,
     )

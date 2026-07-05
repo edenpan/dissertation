@@ -65,9 +65,13 @@ def run_strategy(
         user_initialize(context)
 
     # 零收益基准序列:索引用交易日历的 sessions,规避 run_algorithm 默认联网拉基准。
-    sessions = get_calendar(calendar_name).sessions_in_range(start_ts, end_ts)
+    cal = get_calendar(calendar_name)
+    sessions = cal.sessions_in_range(start_ts, end_ts)
     benchmark_returns = pd.Series(0.0, index=sessions)
 
+    # trading_calendar 显式传入:run_algorithm 缺省会退到 XNYS,美股恰好正确、但港股(XHKG)
+    # 必须显式指定,否则 data_portal 用 XNYS session 读 XHKG bundle 会 DateOutOfBounds。
+    # 对 calendar_name="XNYS"(默认)传入 == 原缺省,美股行为不变。
     return run_algorithm(
         start=start_ts,
         end=end_ts,
@@ -77,4 +81,5 @@ def run_strategy(
         data_frequency="daily",
         bundle=bundle,
         benchmark_returns=benchmark_returns,
+        trading_calendar=cal,
     )

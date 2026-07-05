@@ -86,8 +86,12 @@ def run_rule_zipline(
     params: dict | None = None,
     capital: float = 10_000.0,
     bundle: str = "stockdb",
+    calendar_name: str = "XNYS",
 ):
-    """便捷入口:跑某规则的 zipline 回测,返回每日 performance DataFrame(含 record 的 signal 列)。"""
+    """便捷入口:跑某规则的 zipline 回测,返回每日 performance DataFrame(含 record 的 signal 列)。
+
+    calendar_name 默认 XNYS(美股,原行为不变);跑港股 bundle `stockdb-hk` 时传 "XHKG"。
+    """
     p = dict(params or {})
     p["ticker"] = ticker
     return run_strategy(
@@ -97,4 +101,5 @@ def run_rule_zipline(
         end=end,
         capital=capital,
         bundle=bundle,
+        calendar_name=calendar_name,
     )
