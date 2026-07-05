@@ -303,6 +303,79 @@ def momentum_rule_signal(
 
 
 # ---------------------------------------------------------------------------
+# 6) 8-SMA 状态机 —— smaTrading.py / pso_sma.py(旧 PSO 的适应度标的,PSO 对照主角)
+# ---------------------------------------------------------------------------
+def sma8_signal(
+    prices: pd.DataFrame,
+    *,
+    t1: int = 5, t2: int = 120, t3: int = 60, t4: int = 200,
+    t5: int = 5, t6: int = 120, t7: int = 60, t8: int = 200,
+) -> pd.Series:
+    """8 条 SMA 的买/卖/持有状态机(**含持仓记忆,path-dependent**)。
+
+    旧文件:strategies/componentTradingRules/smaTrading.py、strategies/smaTrading.py、
+            strategies/pso_sma.py(三处互参;PSO 的适应度标的)。
+    旧交易逻辑(文件顶部注释逐字):
+        signal = buy,   if (SMA_t1 > SMA_t2) and (SMA_t3 > SMA_t4)
+               = sell,  if (SMA_t5 < SMA_t6) and (SMA_t7 < SMA_t8)
+               = hold,  otherwise（保持上一状态）
+    旧 smaCross 的状态机(逐行照搬语义):
+        state=False(持币/flat) / True(持股/long);从 flat 起步。
+        for row in stockData[200:]:                 # 旧硬编码从第 200 根起(默认最长窗=200)
+            if buy_trigger  and state==False: state=True    # 只在 flat 时买入
+            if sell_trigger and state==True:  state=False   # 只在 long 时卖出(在 buy 块之后判)
+      —— 旧引擎只有两态(现金/满仓),**无做空**。故本规则信号取值 {0,1}(不是 -1/0/1);
+         这与 rule_factory 的 long/flat 下单口径天然一致(position=signal.clip(lower=0) 即恒等)。
+    旧参数:8 个 SMA 窗口 t1..t8;pso_sma.py 里 PSO 在 [1,200] 整数域搜这 8 维。默认取旧
+        `smaCross([5,120,60,200,5,120,60,200])` = (t1..t4=5,120,60,200 / t5..t8=5,120,60,200)。
+
+    ★★path 依赖 —— 迁移要害(状态机无法用固定 trailing 窗口精确重放):
+      状态在一次 buy_trigger 后会**无限保持 long**,直到某天 sell_trigger 才翻 flat(反之亦然)。
+      故第 t 日的仓位状态依赖自 warm-up 起的**完整触发路径**,而非任何固定长度的 trailing 窗口:
+      若某段 400 天内无翻转触发,固定 300 根窗口就会截断掉更早的那次进场、错判状态。
+      因此 sma8 的 lookback 必须取「全段」(见 lookback_bars 的 _STATEFUL 特判 + test_parity),
+      即 rule_factory 每 bar 用 min(bar_count, 全段)= 自模拟起点至今的**扩张窗口**重算,
+      逐 bar 重放才能与全区间向量化逐日一致(有限窗规则不需要这样)。
+
+    向量化状态机(等价旧逐 bar 循环,买卖触发序列 → set + ffill):
+        buy_trigger  = (SMA_t1>SMA_t2) & (SMA_t3>SMA_t4)
+        sell_trigger = (SMA_t5<SMA_t6) & (SMA_t7<SMA_t8)
+        state = NaN 序列;state[buy_trigger]=1;**再** state[sell_trigger]=0(sell 后置);
+        state = state.ffill().fillna(0)
+      「sell 后置覆盖 buy」精确复现旧代码同 bar 双触发的收口:旧代码 buy 块先执行(flat→long)、
+      sell 块后执行(long→flat),故一根 bar 上 buy 与 sell **同时**成立时,无论前态如何,收盘恒为
+      flat(0)。set+ffill 里让 sell 的 0 覆盖 buy 的 1,结果同为 0,逐 bar 等价(单触发/无触发
+      场景 set+ffill 与「只在反态动作」也已等价:单 buy → 置 1 恰是两旧分支的收口,单 sell →
+      置 0 同理,无触发 → NaN→ffill=保持前态)。warm-up(SMA 未满)比较为 False → 不置态 →
+      ffill 保持 NaN → fillna(0),即前 max(t..)-1 根强制 flat。
+
+    与旧代码字面的两处已知偏离(如实标注,均不改变命题):
+      (a) 旧 smaCross 硬编码从第 200 根起迭代(因默认最长窗恰为 200);本函数按参数取
+          max(t1..t8)-1 作 warm-up——参数化的正确推广(PSO 搜 [2,200] 时窗口常 <200,
+          硬编 200 会平白砍掉可交易段)。
+      (b) 旧 SMA 列带 `.fillna(method='backfill')`(用未来值填 warm-up 的 NaN,潜在
+          lookahead)——但旧循环从第 200 根起,被 backfill 的段永远读不到,实际无害;
+          本迁移直接丢弃 backfill(warm-up 强制 flat),行为等价且根绝 lookahead。
+    """
+    ts = [int(t1), int(t2), int(t3), int(t4), int(t5), int(t6), int(t7), int(t8)]
+    close = prices["close"].astype(float)
+    sig = pd.Series(0, index=prices.index, dtype=int)
+    max_win = max(ts)
+    if len(close) < max_win:
+        return sig  # 全段窗口都不足 → 恒 flat
+    smas = [close.rolling(w).mean() for w in ts]
+    buy = (smas[0] > smas[1]) & (smas[2] > smas[3])       # SMA_t1>t2 且 SMA_t3>t4
+    sell = (smas[4] < smas[5]) & (smas[6] < smas[7])      # SMA_t5<t6 且 SMA_t7<t8
+    state = pd.Series(np.nan, index=prices.index, dtype=float)
+    state[buy] = 1.0
+    state[sell] = 0.0            # ★ sell 后置:同 bar 双触发时覆盖 buy → 收盘 flat(复现旧收口)
+    state = state.ffill().fillna(0.0)
+    sig = state.astype(int)
+    sig.iloc[: max_win - 1] = 0  # SMA 未满段强制 flat(旧 warm-up)
+    return sig.astype(int)
+
+
+# ---------------------------------------------------------------------------
 # 注册表 + MIN_WINDOW + 供 rule_factory 用的取数窗口长度
 # ---------------------------------------------------------------------------
 SIGNAL_FUNCS = {
@@ -311,6 +384,7 @@ SIGNAL_FUNCS = {
     "macd": macd_signal,
     "stochastic": stochastic_signal,
     "momentum_rule": momentum_rule_signal,
+    "sma8": sma8_signal,
 }
 
 DEFAULT_PARAMS = {
@@ -322,6 +396,7 @@ DEFAULT_PARAMS = {
         hnl=26, hns=12, htime=9, snl=40, sns=30,
         sto_n=3, sto_m=7, sto_ob=75, sto_os=25,
     ),
+    "sma8": dict(t1=5, t2=120, t3=60, t4=200, t5=5, t6=120, t7=60, t8=200),
 }
 
 # 每规则:给定 params 返回「信号自第几根 bar(1-based)起有效」= 前 MIN_WINDOW-1 根强制 0。
@@ -336,6 +411,12 @@ MIN_WINDOW = {
         int(p.get("sns", 30)),
         int(p.get("sto_n", 3)) + int(p.get("sto_m", 7)) - 1,
     ),
+    # 8 条 SMA 就绪(最长窗)后状态机才可能翻态;前 max(t..)-1 根强制 flat。
+    "sma8": lambda p: max(
+        int(p.get("t1", 5)), int(p.get("t2", 120)), int(p.get("t3", 60)),
+        int(p.get("t4", 200)), int(p.get("t5", 5)), int(p.get("t6", 120)),
+        int(p.get("t7", 60)), int(p.get("t8", 200)),
+    ),
 }
 
 # EMA 类规则的 last 值依赖全历史(递归),trailing 窗口须给足缓冲让 seed 衰减到不翻整数信号;
@@ -343,10 +424,23 @@ MIN_WINDOW = {
 _EMA_BUFFER = 300   # macd / momentum_rule 的 EMA seed 衰减缓冲
 _FINITE_BUFFER = 5  # bollinger / rsi / stochastic
 
+# ★状态机规则(sma8):仓位状态 path-dependent(见 sma8_signal docstring),固定 trailing
+#   窗口会截断更早的进/出场触发而错判状态 ⇒ 必须用「全段扩张窗口」。用一个大到吃满任何回测
+#   长度的哨兵:rule_factory 的 n=min(bar_count, look) 恒取 bar_count(自起点至今),
+#   test_parity 的 lo=max(0,t-look+1) 恒为 0 ⇒ 二者都退化为「自 bar0 起的扩张窗口」,
+#   与全区间向量化逐日一致。哨兵取 10^9(> 任何实际交易日数)。
+_STATEFUL = {"sma8"}
+_FULL_SEGMENT = 1_000_000_000
+
 
 def lookback_bars(rule_name: str, params: dict) -> int:
-    """rule_factory / test_parity 每 bar 取数(以及逐 bar 模拟)用的 trailing 窗口长度
-    = MIN_WINDOW(params) + 缓冲。EMA 类给大缓冲。"""
+    """rule_factory / test_parity 每 bar 取数(以及逐 bar 模拟)用的 trailing 窗口长度。
+
+    有限窗/EMA 规则 = MIN_WINDOW(params) + 缓冲(EMA 类给大缓冲);
+    状态机规则(sma8)= 全段哨兵(_FULL_SEGMENT),强制扩张窗口重放(见上注)。
+    """
+    if rule_name in _STATEFUL:
+        return _FULL_SEGMENT
     mw = MIN_WINDOW[rule_name](params)
     buf = _EMA_BUFFER if rule_name in ("macd", "momentum_rule") else _FINITE_BUFFER
     return int(mw + buf)

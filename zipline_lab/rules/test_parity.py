@@ -26,6 +26,7 @@ import pandas as pd
 from zipline_lab.rules.signals import (
     DEFAULT_PARAMS,
     SIGNAL_FUNCS,
+    _STATEFUL,
     compute_signal,
     lookback_bars,
 )
@@ -90,9 +91,12 @@ def main() -> int:
         ok, full, perbar, diff = check_rule(rule, prices)
         params = DEFAULT_PARAMS[rule]
         look = lookback_bars(rule, params)
+        # 状态机规则(sma8)lookback 是「全段哨兵」——逐 bar 用自起点起的扩张窗口重放;
+        # 显示成 full-seg 而非那个 10^9 巨数(见 signals._STATEFUL)。
+        look_disp = "full-seg" if rule in _STATEFUL else f"{look:4d}"
         nz = int((full != 0).sum())
         status = "PASS" if ok else f"FAIL ({len(diff)} diff days)"
-        print(f"  {rule:14s} look={look:4d} nonzero={nz:4d}/{len(full)}  -> {status}")
+        print(f"  {rule:14s} look={look_disp:>8s} nonzero={nz:4d}/{len(full)}  -> {status}")
         if not ok:
             all_ok = False
             head = diff.index[:10]
