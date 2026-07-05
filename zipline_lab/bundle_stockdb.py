@@ -41,6 +41,7 @@ import os
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
+from exchange_calendars.errors import CalendarNameCollision
 from zipline.data.bundles import register
 from zipline.utils.calendar_utils import register_calendar_alias
 
@@ -169,5 +170,9 @@ def stockdb_bundle(
 
 
 def register_stockdb_bundle() -> None:
-    register_calendar_alias(EXCHANGE, "XNYS")
+    """幂等:同进程重复调用不抛(alias 撞名吞掉;register 本身是 dict 覆盖,天然幂等)。"""
+    try:
+        register_calendar_alias(EXCHANGE, "XNYS")
+    except CalendarNameCollision:
+        pass
     register(BUNDLE_NAME, stockdb_bundle, calendar_name="XNYS")
