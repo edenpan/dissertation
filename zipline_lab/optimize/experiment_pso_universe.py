@@ -19,11 +19,13 @@
 IS 数据不足跳过规则:每票有效 IS session(bundle 内首个交易日起)< 756(约 3 年)的,
   **跳过 PSO,只跑 buy&hold 供参照**,在报告「跳过清单」注明上市日期。
 
-★环境坑(2026-07-06 发现,已 shim,见下 _patch_calendar_bounds):stockdb-hk bundle 的 bcolz
-  元数据把 XHKG 日历边界冻结在 ingest 当日(2006-07-05..2027-07-05),而 exchange_calendars 的
-  默认日历窗口是 [now-20y, now+1y] 滚动的,今日(07-06)起点滚到 2006-07-06 > 冻结的 2006-07-05,
-  读 bundle 触发 DateOutOfBounds。本脚本进程内把 GLOBAL_DEFAULT_START 前移到 2006-01-01 绕过
-  (只影响 2013 前的空 session,对 2013-2025 窗口零影响)。根治需 re-ingest 时 pin 日历边界。
+★环境坑(2026-07-06 发现,2026-07-07 已根治,不再需要本脚本做任何 shim):stockdb-hk bundle 的
+  bcolz 元数据曾把 XHKG 日历边界冻结在 ingest 当日(2006-07-05..),而 exchange_calendars 的默认
+  日历窗口是 [now-20y, now+1y] 滚动的,07-06 起滚动起点越过冻结的 2006-07-05 → 读 bundle 触发
+  DateOutOfBounds。根治方案:bundle_stockdb.py 的 register_* 显式钉死 start_session=2012-01-01 /
+  end_session=2027-12-31(见其 docstring),冻结边界与滚动窗口彻底解耦;两个 bundle 已按钉边界重灌。
+  因此本脚本不再进程内改 GLOBAL_DEFAULT_START——若日后同类问题复现,应回到 register_* 的钉边界处
+  排查(而非在此加 shim 掩盖)。
 
 跑法(项目根、venv;跑前 set -a; source .env; set +a):
     .venv-zipline/bin/python -m zipline_lab.optimize.experiment_pso_universe
@@ -46,18 +48,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-# ── 环境 shim:必须在任何 bundle 读之前生效(见模块头注环境坑) ──────────────────
-from exchange_calendars import exchange_calendar as _ecal
-
-
-def _patch_calendar_bounds() -> None:
-    """把 exchange_calendars 默认日历起点前移到 2006-01-01,让 stockdb-hk bundle 冻结的
-    2006-07-05 起点仍落在日历边界内。所有默认 get_calendar 调用共享同一(加宽的)实例,
-    避免 zipline 多 reader 因日历对象不一致而 AssertionError。对 2013-2025 window 零影响。"""
-    _ecal.GLOBAL_DEFAULT_START = pd.Timestamp("2006-01-01")
-
-
-_patch_calendar_bounds()
+# ── 日历边界已在 bundle 注册处根治(register_* 钉死 start/end_session),本脚本不再需要任何
+#    进程内 shim(2026-07-07 拆除,见模块头注环境坑)。 ─────────────────────────────
 
 # ── 复用 3 票实验的逐票函数(不改其逻辑) ──────────────────────────────────────
 import sqlalchemy as sa

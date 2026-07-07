@@ -44,7 +44,7 @@ import pandas as pd
 import sqlalchemy as sa
 from exchange_calendars.errors import CalendarNameCollision
 from zipline.data.bundles import register
-from zipline.utils.calendar_utils import register_calendar_alias
+from zipline.utils.calendar_utils import get_calendar, register_calendar_alias
 
 BUNDLE_NAME = "stockdb"
 EXCHANGE = "STOCKDB"  # 自造交易所名,canonical 指到 XNYS
@@ -53,6 +53,28 @@ EXCHANGE = "STOCKDB"  # 自造交易所名,canonical 指到 XNYS
 # 只收 `%.HK`。与美股 bundle 完全隔离(不同 bundle 名/交易所名/日历),故 US 路径 ingest 不受影响。
 BUNDLE_NAME_HK = "stockdb-hk"
 EXCHANGE_HK = "STOCKDB_HK"
+
+# ★钉死日历边界(2026-07-07 根治,见 register_* docstring):两个 bundle 的 register 都显式传
+# 固定的 start_session / end_session,把 ingest 冻结进 bcolz 元数据的日历起点钉在一个恒定值上,
+# 不再随 ingest 当日的滚动日历漂移。数据 2013 起,故 2012 起点安全(会与库内 MIN/MAX(traded_at)
+# 取交集,见 _ingest_impl,实际 bar 区间不变)。
+PIN_START_SESSION = pd.Timestamp("2012-01-01")
+PIN_END_SESSION = pd.Timestamp("2027-12-31")
+
+
+def _pinned_sessions(calendar_name: str) -> tuple[pd.Timestamp, pd.Timestamp]:
+    """把 PIN_START/END 夹进当前日历可用区间并**贴到真实交易日**。
+
+    BcolzDailyBarWriter 要求 start/end_session 必须是日历上的真实 session(见
+    bcolz_daily_bars.py:__init__ 的 is_session 校验),而 2012-01-01/2027-12-31 多为周末/假日,
+    直接传会 ValueError。这里取「≥PIN_START 的首个 session」「≤min(PIN_END, 日历末日) 的末个
+    session」——XNYS 与 XHKG 交易日不同,故按各自日历分别贴。贴出的起点(如 2012-01-03)是**恒定**
+    的真实 session,与 ingest 当日的滚动日历首日彻底解耦,这正是根治点。"""
+    cal = get_calendar(calendar_name)
+    start = max(PIN_START_SESSION, cal.first_session)
+    end = min(PIN_END_SESSION, cal.last_session)
+    sess = cal.sessions_in_range(start, end)
+    return sess[0], sess[-1]
 
 
 def _engine() -> sa.Engine:
@@ -204,18 +226,50 @@ stockdb_hk_bundle = functools.partial(
 
 
 def register_stockdb_bundle() -> None:
-    """幂等:同进程重复调用不抛(alias 撞名吞掉;register 本身是 dict 覆盖,天然幂等)。"""
+    """幂等:同进程重复调用不抛(alias 撞名吞掉;register 本身是 dict 覆盖,天然幂等)。
+
+    ★为什么显式钉 start_session / end_session(2026-07-07 根治):
+    zipline ingest 会把「日历 session 边界」冻结进 bcolz 每资产的 first_row/last_row 元数据;
+    若 register 不传 start/end,zipline 用 ingest 当日的 `calendar.first_session / last_session`
+    (见 zipline/data/bundles/core.py:402-406)。而 exchange_calendars 的默认日历窗口是
+    **滚动的** [now−20y, now+1y]。于是 ingest 当日冻结的起点(如 2006-07-05)会随日子推移被
+    滚动窗口的新起点(now−20y)越过——某天 `calendar.first_session` > 冻结起点,读 bundle 即抛
+    DateOutOfBounds(stockdb-hk 已于 2026-07-06 触发)。钉一个恒定的 start_session=2012-01-01
+    (远早于数据首日 2013、又远晚于任何合理的滚动起点),让冻结边界与滚动窗口彻底解耦:只要
+    2012-01-01 仍落在滚动窗口内(约到 2032 年前恒成立),读 bundle 永不越界。end_session 若超出
+    当日 `calendar.last_session` 会被 core.py 夹到当日值(上界只会随日历增长,不会反向越界,故安全)。
+    真实 bar 区间由 _ingest_impl 与库内 MIN/MAX(traded_at) 取交集决定,钉边界不改任何价格数据。
+    """
     try:
         register_calendar_alias(EXCHANGE, "XNYS")
     except CalendarNameCollision:
         pass
-    register(BUNDLE_NAME, stockdb_bundle, calendar_name="XNYS")
+    start_session, end_session = _pinned_sessions("XNYS")
+    register(
+        BUNDLE_NAME,
+        stockdb_bundle,
+        calendar_name="XNYS",
+        start_session=start_session,
+        end_session=end_session,
+    )
 
 
 def register_stockdb_hk_bundle() -> None:
-    """注册港股 bundle `stockdb-hk`(XHKG 日历,只收 %.HK)。幂等,同上。"""
+    """注册港股 bundle `stockdb-hk`(XHKG 日历,只收 %.HK)。幂等,同上。
+
+    同样显式钉 start_session / end_session(见 register_stockdb_bundle docstring 的完整解释):
+    stockdb-hk 是 7-06 事故的首个受害者(2026-07-05 ingest 冻结起点 2006-07-05,7-06 起滚动窗口
+    起点越过它 → DateOutOfBounds)。钉 2012-01-01 后根治。
+    """
     try:
         register_calendar_alias(EXCHANGE_HK, "XHKG")
     except CalendarNameCollision:
         pass
-    register(BUNDLE_NAME_HK, stockdb_hk_bundle, calendar_name="XHKG")
+    start_session, end_session = _pinned_sessions("XHKG")
+    register(
+        BUNDLE_NAME_HK,
+        stockdb_hk_bundle,
+        calendar_name="XHKG",
+        start_session=start_session,
+        end_session=end_session,
+    )
